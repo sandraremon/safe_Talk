@@ -1,11 +1,7 @@
 import os
 # import your modules here
 from encryption import encrypt, decrypt
-from key_store import (
-    alice_private_key, alice_public_key,
-    bob_private_key, bob_public_key,
-    derived_key, derived_key_2
-)
+from key_derivation import derived_key, derived_key_2
 
 def test_key_exchange():
     assert derived_key == derived_key_2
