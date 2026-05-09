@@ -7,9 +7,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from models.db import User, engine
 import os
+from fastapi import HTTPException, status
 
-router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+router = APIRouter(prefix="/auth", tags=["Authentication"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-production")
 ALGORITHM = "HS256"
@@ -26,19 +27,30 @@ def get_db():
                 except Exception:
                     db.rollback()
                     raise
-
+#everytime am registering or loging in i need a db session which is by the function above
+#if it goes well the db.commit means it will save changes to db , other wise it will rollback
 
 def create_access_token(data: dict) -> str:
-    # copy data, add "exp" key with expiry time
+    # copy data , shallow copy if we modify to_encode then data won't change
+    to_encode = data.copy()
+    # add "exp" key with expiry time 30 mins
+    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
+    #adds a new key-value pair to the dictionary , adds another attribute to it
+    to_encode.update({"exp": expire})
     # return jwt.encode(...)
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     ...
 
-
+# depending on 0auth2 is what extracts token from http header
 def verify_token(token: str = Depends(oauth2_scheme)) -> str:
     # decode the JWT
+    token_data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     # extract username from payload["sub"]
+    username: str = token_data["username"]
     # raise HTTPException(401) if invalid or expired
-    # return username
+    if username is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+    return username
     ...
 
 
@@ -50,10 +62,19 @@ async def register(
     public_key: str,
     db: Session = Depends(get_db)
 ):
-    # 1. check username/email not already taken
-    # 2. hash the password with argon2.hash()
-    # 3. create User object, add to db, commit
-    # 4. return {"message": "registered"}
+
+    existing_user = db.query(User).filter(User.username == username).first()
+    if existing_user is None:
+        new_user = User(
+            username=username,
+            email=email,
+            password_hash=argon2.hash(password.encode("utf-8")),
+            public_key=public_key.encode("utf-8"),
+        )
+        db.add(new_user)
+        db.commit()
+
+        return {"message": "registered"}
     ...
 
 
