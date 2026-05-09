@@ -2,12 +2,15 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from passlib.hash import argon2
+#from passlib.hash import argon2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from models.db import User, engine
 import os
 from fastapi import HTTPException, status
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -46,7 +49,7 @@ def verify_token(token: str = Depends(oauth2_scheme)) -> str:
     # decode the JWT
     token_data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     # extract username from payload["sub"]
-    username: str = token_data["username"]
+    username: str = token_data["sub"]
     # raise HTTPException(401) if invalid or expired
     if username is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
@@ -68,13 +71,16 @@ async def register(
         new_user = User(
             username=username,
             email=email,
-            password_hash=argon2.hash(password.encode("utf-8")),
+            password_hash=pwd_context.hash(password),
             public_key=public_key.encode("utf-8"),
         )
-        db.add(new_user)
-        db.commit()
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+    db.add(new_user)
+    db.commit()
 
-        return {"message": "registered"}
+    return {"message": "registered"}
     ...
 
 
@@ -83,9 +89,13 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    # 1. look up user by username
-    # 2. argon2.verify(form_data.password, user.password_hash)
-    # 3. if invalid raise HTTPException(401)
-    # 4. create_access_token({"sub": user.username})
-    # 5. return {"access_token": token, "token_type": "bearer"}
+
+    user = db.query(User).filter(User.username == form_data.username).first()
+    if not user or not pwd_context.verify(form_data.password, user.password_hash.encode("utf-8")):
+        raise HTTPException( status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password"
+        )
+
+    token = create_access_token(data={"sub": user.username})
+    return {"access_token": token, "token_type": "bearer"}
+
     ...
