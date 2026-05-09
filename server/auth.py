@@ -7,7 +7,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from models.db import User, engine
 import os
-from fastapi import HTTPException, status
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -30,7 +29,7 @@ def get_db():
                 except Exception:
                     db.rollback()
                     raise
-#everytime am registering or loging in i need a db session which is by the function above
+#everytime  am registering or loging in i need a db session which is by the function above
 #if it goes well the db.commit means it will save changes to db , other wise it will rollback
 
 def create_access_token(data: dict) -> str:
@@ -42,7 +41,7 @@ def create_access_token(data: dict) -> str:
     to_encode.update({"exp": expire})
     # return jwt.encode(...)
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    ...
+
 
 # depending on 0auth2 is what extracts token from http header
 def verify_token(token: str = Depends(oauth2_scheme)) -> str:
@@ -54,7 +53,6 @@ def verify_token(token: str = Depends(oauth2_scheme)) -> str:
     if username is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
     return username
-    ...
 
 
 @router.post("/register", status_code=201)
@@ -77,17 +75,18 @@ async def register(
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+
     db.add(new_user)
     db.commit()
 
     return {"message": "registered"}
-    ...
 
 
-@router.post("/login")
+
+@router.post("/login",status_code=201)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+     form_data: OAuth2PasswordRequestForm = Depends(),
+     db: Session = Depends(get_db)
 ):
 
     user = db.query(User).filter(User.username == form_data.username).first()
@@ -98,4 +97,3 @@ async def login(
     token = create_access_token(data={"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
 
-    ...
