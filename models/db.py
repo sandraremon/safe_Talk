@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from datetime import datetime, timezone
 
 from sqlalchemy import (
@@ -7,7 +7,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import (
     DeclarativeBase, Mapped,
-    mapped_column, relationship, Session
+    mapped_column, relationship
 )
 
 
@@ -29,6 +29,7 @@ class User(Base):
     sent_messages: Mapped[List["Message"]] = relationship(
         "Message", foreign_keys="Message.sender_id", back_populates="sender"
     )
+
     received_messages: Mapped[List["Message"]] = relationship(
         "Message", foreign_keys="Message.recipient_id", back_populates="recipient"
     )
@@ -50,6 +51,7 @@ class Message(Base):
     sender: Mapped["User"] = relationship(
         "User", foreign_keys=[sender_id], back_populates="sent_messages"
     )
+    
     recipient: Mapped["User"] = relationship(
         "User", foreign_keys=[recipient_id], back_populates="received_messages"
     )
@@ -62,4 +64,5 @@ engine = create_engine(
     "mysql+pymysql://safetalk_user:safetalk_password@localhost/safeTalk",
     echo=True
 )
+
 Base.metadata.create_all(engine)
