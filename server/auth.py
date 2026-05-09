@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.hash import argon2
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from models.db import User, engine
 import os
 
@@ -17,7 +18,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 def get_db():
     # yield a Session, close it after the request
-    ...
+            # Create a SQLAlchemy session
+              with Session(engine) as db:
+                try:
+                    yield db
+                    db.commit()
+                except Exception:
+                    db.rollback()
+                    raise
 
 
 def create_access_token(data: dict) -> str:
