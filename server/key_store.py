@@ -11,16 +11,16 @@ from server.auth import get_db, verify_token
 router = APIRouter()
 
 
-@router.get("/keys/{username}")
+@router.get("/{username}")
 async def get_public_key(
     username: str,
     db: Session = Depends(get_db),
-    current_user: str = Depends(verify_token)
+    #current_user: str = Depends(verify_token)
 ):
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"username": username, "public_key": user.public_key.hex()}
+    return {"username": username, "public_key": user.public_key}
 
 
 # 

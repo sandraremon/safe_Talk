@@ -1,4 +1,5 @@
 import json
+from encodings import utf_8
 from typing import Callable, Optional
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
@@ -19,38 +20,40 @@ from crypto.key_derivation import derive
 from crypto.encryption import encrypt, decrypt
 
 
+def _raise(resp: httpx.Response) -> None:
+    resp.raise_for_status()
+
+
 class Session:
-#this is Asymmetric Encryption because my private is in the machine disk in .pem
     def __init__(
         self,
         base_url: str = "http://localhost:8000",
         ws_url: str = "ws://localhost:8000",
+        key_file: str = "private_key.pem"
     ):
         self.base_url = base_url
         self.ws_url = ws_url
-        #this is the digital identity , it checks a .pem file in computer
-        if Path("private_key.pem").exists():
-            self.private_key = load_private_key("private_key.pem")
+        self.key_file = key_file
+        #this is the digital identity , its in the browser you use , saved the PR
+        if Path(self.key_file).exists():
+            self.private_key = load_private_key(self.key_file)
             self.public_key = self.private_key.public_key()
-
         else:
             self.private_key, self.public_key = generate_keypair()
-            save_private_key(self.private_key)
+            # Save it to the correct path!
+            save_private_key(self.private_key, path=self.key_file)
 
         self.username= None
         self.token = None
         self._ws  = None
-        #This is a placeholder for a callback function
         self._on_message= None
-        #the shared AES key
         self._session_keys={}
-
         self.http= httpx.Client()
-        pass
-
 
     def register(self, username: str, email: str, password: str) -> None:
         #save the identity of user upon registration
+        public_hex = serialize_public_key(self.public_key)
+        print(f"DEBUG: Registering {username} with public key: {public_hex[:20]}...")
         save_private_key(self.private_key)
         #get the public key but first serialize for the server to store
         public_hex = serialize_public_key(self.public_key)
@@ -69,34 +72,30 @@ class Session:
     def login(self, username: str, password: str) -> None:
       self._do_login(username, password)
 
-# to match the login function in server , the OAuth thing expects form-encoded data , not json nor params
-#Content-Type : application/x-www-form-urlencoded,
     def _do_login(self, username: str, password: str) -> None:
         resp = self.http.post(
             f"{self.base_url}/auth/login",
             data={"username": username, "password": password} )
-        self._raise(resp)
+        _raise(resp)
         self.token = resp.json()["access_token"]
         self.username = username
 
 #contact is the person i wanna contact and talk to
-    def start_chat(self, contact: str) -> None:
+    def start_chat(self, contact: str) -> bytes | None:
         #if i already have this contact before then just return the secrete key
-         # from session keys
         if contact in self._session_keys:
-            return
+            return self._session_keys[contact]
 
-        #if i don't then am getting their data from header to get their public key
-        #to then create our shared secret key
+        #if i don't then am get their data from header to get their public key to then create our shared secret key
         resp = self.http.get(
-            f"{self.base_url}/keys/{contact}",
-            headers=self._auth_headers()
+            f"{self.base_url}/key/{contact}",
+            headers={"Authorization": f"Bearer {self.token}"}
         )
-        self._raise(resp)
+        server_hex = resp.json()["public_key"]
+        print(f"DEBUG: Server returned public key for {contact}: {server_hex[:20]}...")
+        print(f"DEBUG: My own public key is: {serialize_public_key(self.public_key)[:20]}...")
 
-        # convert it from string to hec
         their_pub = deserialize_public_key(resp.json()["public_key"])
-        #making the shared key
         shared_secret = ecdh(self.private_key, their_pub)
 
         # making my public key and my contacts back to hex to derive it so its more secure
@@ -104,43 +103,47 @@ class Session:
         their_pub_raw = their_pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
 
         # HKDF — stretch shared secret into a proper 32-byte AES key
-        aes_key = derive(shared_secret, my_pub_raw, their_pub_raw)
+        print(f"DEBUG: Shared secret (first 5 bytes): {shared_secret.hex()[:10]}")
+        print(f"DEBUG: [{self.username}] My Pub: {my_pub_raw[:10]}")
+        print(f"DEBUG: [{self.username}] Their Pub: {their_pub_raw[:10]}")
+        aes_key = derive(shared_secret, my_pub_raw,their_pub_raw)
 
         # saving that contact session keys in case i talked to them again
         self._session_keys[contact] = aes_key
-        print(f"[Session] Session key ready for '{contact}'")
+        return aes_key
 
 
     async def connect(self) -> None:
-        pass
+        uri = f"{self.ws_url}/ws/{self.username}?token={self.token}"
+        self._ws = await websockets.connect(uri)
 
     async def disconnect(self) -> None:
         pass
 
     async def send(self, to_user: str, plaintext: str) -> None:
-        pass
+        aes_key = self.start_chat(to_user)
+        ciphertext = encrypt(aes_key, plaintext.encode('utf-8'))  # Returns bytes
+
+        payload = {
+            "to": to_user,
+            "ciphertext": ciphertext.hex()
+        }
+        await self._ws.send(json.dumps(payload))
 
     def on_message(self, callback: Callable[[str, str], None]) -> None:
-        pass
+         self._on_message = callback
 
     async def listen(self) -> None:
-        pass
+         async for message in self._ws:
+             data = json.loads(message)
+             sender = data["from"]
+             if sender not in self._session_keys:
+                 print(f"[*] New message from {sender}. Performing handshake...")
+                 # This fetches the sender's public key and generates the AES key
+                 self.start_chat(sender)
+             aes_key = self._session_keys[sender]
+             ciphertext_bytes = bytes.fromhex(data["ciphertext"])
+             plaintext = decrypt(aes_key, ciphertext_bytes).decode('utf-8')
+             if self._on_message:
+                 self._on_message(sender, plaintext)
 
-    def get_history(self, contact: str) -> list[dict]:
-        pass
-
-    def _auth_headers(self) -> dict:
-        if not self.token:
-            raise RuntimeError("not authorized")
-
-        return {"Authorization": f"Bearer {self.token}"}
-
-    def _raise(self, resp: httpx.Response) -> None:
-        pass
-
-    # context manager — lets you use: async with Session() as s:
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *_):
-        await self.disconnect()
