@@ -23,6 +23,6 @@ Base.metadata.create_all(engine)
 app.include_router(auth_router, prefix="/auth")
 app.include_router(key_router, prefix="/key")
 app.token_url = "/login"
-app.include_router(auth_router)
-app.include_router(key_router)
+# app.include_router(auth_router)
+# app.include_router(key_router)
 app.include_router(ws_router)
