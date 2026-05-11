@@ -5,6 +5,7 @@ from jose import JWTError, jwt
 #from passlib.hash import argon2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
+from  crypto.key_exchange import generate_keypair, save_private_key, serialize_public_key
 
 from models.db import User, engine
 import os
@@ -67,18 +68,20 @@ async def register(
     username: str,
     email: str,
     password: str,
-    public_key: str,
     db: Session = Depends(get_db)
 ):
 
     existing_user = db.query(User).filter(User.username == username).first()
     if existing_user is None:
+        private_key, public_key = generate_keypair()
+        public_hex = serialize_public_key(public_key)
         new_user = User(
             username=username,
             email=email,
             password_hash=pwd_context.hash(password),
-            public_key=public_key.encode("utf-8"),
+            public_key=public_hex
         )
+        save_private_key(private_key, path=f"{username}_private_key.pem")
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
