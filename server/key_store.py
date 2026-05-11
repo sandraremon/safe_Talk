@@ -10,12 +10,24 @@ from server.auth import get_db, verify_token
 
 router = APIRouter()
 
+#this returns the new public key not the one made in registration
+@router.put("/update")
+async def update_public_key(
+        payload: dict,
+        db: Session = Depends(get_db),
+        current_user: str = Depends(verify_token)
+):
+    user = db.query(User).filter(User.username == current_user).first()
+    user.public_key = payload["public_key"]
+    db.commit()
+    return {"message": "key updated"}
+
 
 @router.get("/{username}")
 async def get_public_key(
     username: str,
     db: Session = Depends(get_db),
-    #current_user: str = Depends(verify_token)
+    current_user: str = Depends(verify_token)
 ):
     user = db.query(User).filter(User.username == username).first()
     if not user:
@@ -51,4 +63,3 @@ async def get_message_history(
         }
         for msg in messages
     ]
- 

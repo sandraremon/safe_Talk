@@ -52,8 +52,6 @@ class Session:
 
     def register(self, username: str, email: str, password: str) -> None:
         #save the identity of user upon registration
-        public_hex = serialize_public_key(self.public_key)
-        print(f"DEBUG: Registering {username} with public key: {public_hex[:20]}...")
         save_private_key(self.private_key)
         #get the public key but first serialize for the server to store
         public_hex = serialize_public_key(self.public_key)
@@ -75,10 +73,19 @@ class Session:
     def _do_login(self, username: str, password: str) -> None:
         resp = self.http.post(
             f"{self.base_url}/auth/login",
-            data={"username": username, "password": password} )
+            data={"username": username, "password": password}
+        )
         _raise(resp)
         self.token = resp.json()["access_token"]
         self.username = username
+
+        #  now it fetches the correct updated key and replace it
+        public_hex = serialize_public_key(self.public_key)
+        self.http.put(
+            f"{self.base_url}/key/update",
+            json={"public_key": public_hex},
+            headers={"Authorization": f"Bearer {self.token}"}
+        )
 
 #contact is the person i wanna contact and talk to
     def start_chat(self, contact: str) -> bytes | None:
@@ -92,8 +99,7 @@ class Session:
             headers={"Authorization": f"Bearer {self.token}"}
         )
         server_hex = resp.json()["public_key"]
-        print(f"DEBUG: Server returned public key for {contact}: {server_hex[:20]}...")
-        print(f"DEBUG: My own public key is: {serialize_public_key(self.public_key)[:20]}...")
+
 
         their_pub = deserialize_public_key(resp.json()["public_key"])
         shared_secret = ecdh(self.private_key, their_pub)
@@ -103,11 +109,7 @@ class Session:
         their_pub_raw = their_pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
 
         # HKDF — stretch shared secret into a proper 32-byte AES key
-        print(f"DEBUG: Shared secret (first 5 bytes): {shared_secret.hex()[:10]}")
-        print(f"DEBUG: [{self.username}] My Pub: {my_pub_raw[:10]}")
-        print(f"DEBUG: [{self.username}] Their Pub: {their_pub_raw[:10]}")
         aes_key = derive(shared_secret, my_pub_raw,their_pub_raw)
-
         # saving that contact session keys in case i talked to them again
         self._session_keys[contact] = aes_key
         return aes_key
@@ -122,7 +124,7 @@ class Session:
 
     async def send(self, to_user: str, plaintext: str) -> None:
         aes_key = self.start_chat(to_user)
-        ciphertext = encrypt(aes_key, plaintext.encode('utf-8'))  # Returns bytes
+        ciphertext = encrypt(aes_key, plaintext.encode('utf-8'))  # returns bytes
 
         payload = {
             "to": to_user,
@@ -138,8 +140,6 @@ class Session:
              data = json.loads(message)
              sender = data["from"]
              if sender not in self._session_keys:
-                 print(f"[*] New message from {sender}. Performing handshake...")
-                 # This fetches the sender's public key and generates the AES key
                  self.start_chat(sender)
              aes_key = self._session_keys[sender]
              ciphertext_bytes = bytes.fromhex(data["ciphertext"])
