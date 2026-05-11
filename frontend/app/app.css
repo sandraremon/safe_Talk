@@ -1,5 +1,7 @@
-@import "tailwindcss";
 @import "./theme.css";
+@import "./CSS/Universal.css";
+@import "tailwindcss";
+@import "@heroui/styles";
 
 @plugin "tailwindcss-animate";
 @plugin "tailwindcss-react-aria-components";
@@ -65,3 +67,4 @@ input[type="search"]::-webkit-search-cancel-button {
 .recharts-surface path {
     outline: none;
 }
+

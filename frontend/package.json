@@ -9,6 +9,8 @@
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
+    "@heroui/react": "^3.0.4",
+    "@heroui/styles": "^3.0.4",
     "@react-router/node": "7.15.0",
     "@react-router/serve": "7.15.0",
     "@react-types/overlays": "^3.10.0",
