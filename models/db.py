@@ -52,7 +52,7 @@ class Message(Base):
 
 
 engine = create_engine(
-    "mysql+pymysql://root:20072901@localhost/safeTalk",
+    "mysql+pymysql://safetalk_user:safetalk_password@localhost/safeTalk",
     echo=True
 )
 
