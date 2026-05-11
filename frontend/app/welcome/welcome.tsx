@@ -61,6 +61,6 @@ const navItemsWithDividers: (NavItemType | NavItemDividerType)[] = [
 
 export function Welcome() {
     return (
-        <SidebarNavigationSectionDividers activeUrl="/" items={navItemsWithDividers} />
+        <SidebarNavigationSectionDividers />
     )
 }

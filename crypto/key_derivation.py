@@ -12,5 +12,3 @@ def derive(shared_key: bytes, my_pub_raw: bytes, their_pub_raw: bytes) -> bytes:
         salt = salt,  # or shared transcript hash
         info=b'handshake data',
     ).derive(shared_key)
-
-

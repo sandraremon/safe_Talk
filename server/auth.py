@@ -5,6 +5,7 @@ from jose import JWTError, jwt
 #from passlib.hash import argon2
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
+
 from models.db import User, engine
 import os
 from passlib.context import CryptContext
@@ -14,7 +15,7 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 # No prefix here — main.py adds /auth when including the router
 router = APIRouter(tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-production")
 ALGORITHM = "HS256"
@@ -38,7 +39,7 @@ def create_access_token(data: dict) -> str:
     # copy data , shallow copy if we modify to_encode then data won't change
     to_encode = data.copy()
     # add "exp" key with expiry time 30 mins
-    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=3000)
     #adds a new key-value pair to the dictionary , adds another attribute to it
     to_encode.update({"exp": expire})
     # return jwt.encode(...)
@@ -89,7 +90,7 @@ async def register(
 
 
 
-@router.post("/login",status_code=201)
+@router.post("/login", status_code=201)
 async def login(
      form_data: OAuth2PasswordRequestForm = Depends(),
      db: Session = Depends(get_db)
@@ -97,9 +98,7 @@ async def login(
 
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not pwd_context.verify(form_data.password, user.password_hash.encode("utf-8")):
-        raise HTTPException( status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password"
-        )
+        raise HTTPException( status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
 
     token = create_access_token(data={"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
-

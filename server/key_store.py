@@ -1,10 +1,12 @@
+import os
 from operator import and_, or_
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy import text, select
+from sqlalchemy.orm import Session, defer
 from fastapi import APIRouter
 
-
+from crypto.encryption import encrypt
 from models.db import Message, User, engine
 from server.auth import get_db, verify_token
 
@@ -51,4 +53,45 @@ async def get_message_history(
         }
         for msg in messages
     ]
- 
+
+@router.get("/conversations")
+async def get_user_conversations(
+        db: Session = Depends(get_db),
+        current_user: str = Depends(verify_token)
+):
+    me = db.query(User).filter(User.username == current_user).first()
+    conversations = (
+        db.query(User.id, User.username)
+        .join(Message, User.id == Message.recipient_id)
+        .filter(Message.sender_id == me.id)
+        .distinct(Message.recipient_id)
+        .all()
+    )
+
+    result = [
+        {
+            "recipient_id": recipient_id,
+            "recipient_name": recipient_name
+        }
+        for recipient_id, recipient_name in conversations
+    ]
+
+    print("hello    ")
+    print(result)
+    print("hello again    ")
+
+    return result
+
+@router.post("/sendMessage")
+async def get_user_conversations(
+        plaintext: str,
+        to_user: int,
+        db: Session = Depends(get_db),
+        current_user: str = Depends(verify_token)
+):
+    db.add(Message(
+        sender_id = db.query(User).filter(current_user == User.username).first().id,
+        recipient_id = db.query(User).filter(User.id == to_user).first().id,
+        ciphertext = encrypt(os.urandom(32), plaintext.encode("utf-8"))
+    ))
+    db.commit()

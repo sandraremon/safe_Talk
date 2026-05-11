@@ -98,7 +98,7 @@ export const Avatar = ({
 
     const renderMainContent = () => {
         if (canShowImage) {
-            return <img data-avatar-img className="size-full object-cover" src={src} alt={alt} onError={() => setIsFailed(true)} />;
+            return <img data-avatar-img className="size-full object-cover" src="/cryptalk-logo%201.png" alt={alt} onError={() => setIsFailed(true)} />;
         }
 
         if (initials) {

@@ -41,11 +41,8 @@ const placeholderAccounts: NavAccountType[] = [
     },
 ];
 
-export const NavAccountMenu = ({
-    className,
-    selectedAccountId = "olivia",
-    ...dialogProps
-}: AriaDialogProps & { className?: string; accounts?: NavAccountType[]; selectedAccountId?: string }) => {
+export const AccountManager = ({className, selectedAccountId = "olivia", ...dialogProps}: AriaDialogProps & { className?: string; accounts?: NavAccountType[]; selectedAccountId?: string }) => {
+
     const focusManager = useFocusManager();
     const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -82,40 +79,9 @@ export const NavAccountMenu = ({
             ref={dialogRef}
             className={cx("w-66 rounded-xl bg-secondary_alt shadow-lg ring ring-secondary_alt outline-hidden", className)}
         >
-            <div className="rounded-xl bg-primary ring-1 ring-secondary">
-                <div className="flex flex-col gap-0.5 py-1.5">
-                    <NavAccountCardMenuItem label="View profile" icon={User01} shortcut="⌘K->P" />
-                    <NavAccountCardMenuItem label="Account settings" icon={Settings01} shortcut="⌘S" />
-                    <NavAccountCardMenuItem label="Documentation" icon={BookOpen01} />
-                </div>
-                <div className="flex flex-col gap-0.5 border-t border-secondary py-1.5">
-                    <div className="px-3 pt-1.5 pb-1 text-xs font-semibold text-tertiary">Switch account</div>
-
-                    <div className="flex flex-col gap-0.5 px-1.5">
-                        {placeholderAccounts.map((account) => (
-                            <button
-                                key={account.id}
-                                className={cx(
-                                    "relative w-full cursor-pointer rounded-md px-2 py-1.5 text-left outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover focus:z-10 focus-visible:outline-2 focus-visible:outline-offset-2",
-                                    account.id === selectedAccountId && "bg-primary_hover",
-                                )}
-                            >
-                                <AvatarLabelGroup status="online" size="md" src={account.avatar} title={account.name} subtitle={account.email} />
-
-                                <RadioButtonBase isSelected={account.id === selectedAccountId} className="absolute top-2 right-2" />
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                <div className="flex flex-col gap-2 px-2 pt-0.5 pb-2">
-                    <Button iconLeading={Plus} color="secondary" size="sm">
-                        Add account
-                    </Button>
-                </div>
-            </div>
 
             <div className="pt-1 pb-1.5">
-                <NavAccountCardMenuItem label="Sign out" icon={LogOut01} shortcut="⌥⇧Q" />
+                <NavAccountCardMenuItem label="Sign out" icon={LogOut01} />
             </div>
         </AriaDialog>
     );
@@ -152,17 +118,7 @@ const NavAccountCardMenuItem = ({
     );
 };
 
-export const NavAccountCard = ({
-    popoverPlacement,
-    selectedAccountId = "caitlyn",
-    items = placeholderAccounts,
-    avatarRounded,
-}: {
-    popoverPlacement?: Placement;
-    selectedAccountId?: string;
-    items?: NavAccountType[];
-    avatarRounded?: boolean;
-}) => {
+export const NavAccountCard = ({popoverPlacement, selectedAccountId = "Unknown", items = placeholderAccounts, avatarRounded,}: { popoverPlacement?: Placement; selectedAccountId?: string; items?: NavAccountType[]; avatarRounded?: boolean; }) => {
     const triggerRef = useRef<HTMLDivElement>(null);
     const isDesktop = useBreakpoint("lg");
 
@@ -170,22 +126,21 @@ export const NavAccountCard = ({
 
     if (!selectedAccount) {
         console.warn(`Account with ID ${selectedAccountId} not found in <NavAccountCard />`);
-        return null;
     }
 
     return (
-        <div ref={triggerRef} className="relative flex items-center gap-3 rounded-xl p-3 ring-1 ring-secondary ring-inset">
-            <AvatarLabelGroup
-                size="md"
-                src={selectedAccount.avatar}
-                title={selectedAccount.name}
-                subtitle={selectedAccount.email}
-                status={selectedAccount.status}
-                rounded={avatarRounded}
-            />
+        <div ref={triggerRef} className="relative rounded-3xl flex items-center justify-between gap-3 p-3 bg-primary shadow-2xs">
+            <div className="flex items-center gap-3">
+                <img src="/cryptalk-logo%201.png" alt={selectedAccount?.name} className={cx("size-10 rounded-full", avatarRounded && "rounded-full")} />
+
+                <div className="flex flex-col gap-x-0.5 text-sm">
+                    <p className="font-bold">{selectedAccountId}</p>
+                    <p className="text-xs font-semibold">{selectedAccountId}</p>
+                </div>
+            </div>
 
             <AriaDialogTrigger>
-                <AriaButton className="absolute top-2 right-2 flex cursor-pointer items-center justify-center rounded-md p-1.5 text-fg-quaternary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2 pressed:bg-primary_hover pressed:text-fg-quaternary_hover">
+                <AriaButton className="flex cursor-pointer items-center justify-center rounded-md p-1.5 text-fg-quaternary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2 pressed:bg-primary_hover pressed:text-fg-quaternary_hover">
                     <ChevronSelectorVertical className="size-4 shrink-0 stroke-[2.25px]" />
                 </AriaButton>
                 <AriaPopover
@@ -202,7 +157,7 @@ export const NavAccountCard = ({
                         )
                     }
                 >
-                    <NavAccountMenu selectedAccountId={selectedAccountId} accounts={items} />
+                    <AccountManager selectedAccountId={selectedAccountId} accounts={items} />
                 </AriaPopover>
             </AriaDialogTrigger>
         </div>

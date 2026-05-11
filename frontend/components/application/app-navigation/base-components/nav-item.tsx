@@ -14,8 +14,6 @@ interface NavItemBaseProps {
     iconOnly?: boolean;
     /** Whether the collapsible nav item is open. */
     open?: boolean;
-    /** URL to navigate to when the nav item is clicked. */
-    href?: string;
     /** Type of the nav item. */
     type: "link" | "collapsible" | "collapsible-child";
     /** Icon component to display. */
@@ -32,7 +30,7 @@ interface NavItemBaseProps {
     children?: ReactNode;
 }
 
-export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, truncate = true, onClick }: NavItemBaseProps) => {
+export const NavItemBase = ({ current, type, badge, icon: Icon, children, truncate = true, onClick }: NavItemBaseProps) => {
     const iconElement = Icon && (
         <Icon
             aria-hidden="true"
@@ -55,7 +53,7 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, 
     const labelElement = (
         <span
             className={cx(
-                "flex-1 text-sm font-semibold text-secondary transition-inherit-all group-hover/item:text-secondary_hover",
+                "flex-1 p-3 rounded-4xl font-semibold text-secondary transition-inherit-all group-hover/item:text-secondary_hover",
                 truncate && "truncate",
                 current && "text-secondary_hover",
             )}
@@ -64,19 +62,14 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, 
         </span>
     );
 
-    const isExternal = href && href.startsWith("http");
-    const externalIcon = isExternal && <Share04 className="size-4 stroke-[2.5px] text-fg-quaternary" />;
-
     if (type === "collapsible") {
         return (
-            <summary className={cx("p-2", styles.root, current && styles.rootSelected)} onClick={onClick}>
+            <summary className={cx("p-2 rounded-4xl", styles.root, current && styles.rootSelected)} onClick={onClick}>
                 {iconElement}
 
                 {labelElement}
 
                 {badgeElement}
-
-                <ChevronDown aria-hidden="true" className="ml-3 size-4 shrink-0 stroke-[2.5px] text-fg-quaternary in-open:-scale-y-100" />
             </summary>
         );
     }
@@ -84,15 +77,12 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, 
     if (type === "collapsible-child") {
         return (
             <AriaLink
-                href={href!}
-                target={isExternal ? "_blank" : "_self"}
                 rel="noopener noreferrer"
                 className={cx("py-2 pr-3 pl-10", styles.root, current && styles.rootSelected)}
                 onClick={onClick}
                 aria-current={current ? "page" : undefined}
             >
                 {labelElement}
-                {externalIcon}
                 {badgeElement}
             </AriaLink>
         );
@@ -100,8 +90,6 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, 
 
     return (
         <AriaLink
-            href={href!}
-            target={isExternal ? "_blank" : "_self"}
             rel="noopener noreferrer"
             className={cx("group/item p-2", styles.root, current && styles.rootSelected)}
             onClick={onClick}
@@ -109,7 +97,6 @@ export const NavItemBase = ({ current, type, badge, href, icon: Icon, children, 
         >
             {iconElement}
             {labelElement}
-            {externalIcon}
             {badgeElement}
         </AriaLink>
     );
