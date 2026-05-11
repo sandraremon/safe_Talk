@@ -1,19 +1,29 @@
-import os
 from operator import and_, or_
 
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy import text, select
-from sqlalchemy.orm import Session, defer
+from sqlalchemy.orm import Session
 from fastapi import APIRouter
 
-from crypto.encryption import encrypt
+
 from models.db import Message, User, engine
 from server.auth import get_db, verify_token
 
 router = APIRouter()
 
+#this returns the new public key not the one made in registration
+@router.put("/update")
+async def update_public_key(
+        payload: dict,
+        db: Session = Depends(get_db),
+        current_user: str = Depends(verify_token)
+):
+    user = db.query(User).filter(User.username == current_user).first()
+    user.public_key = payload["public_key"]
+    db.commit()
+    return {"message": "key updated"}
 
-@router.get("/keys/{username}")
+
+@router.get("/{username}")
 async def get_public_key(
     username: str,
     db: Session = Depends(get_db),
@@ -22,7 +32,7 @@ async def get_public_key(
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"username": username, "public_key": user.public_key.hex()}
+    return {"username": username, "public_key": user.public_key}
 
 
 # 

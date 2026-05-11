@@ -4,6 +4,8 @@ from models.db import Base, engine
 from server.auth import router as auth_router
 from server.key_store import router as key_router
 from server.router import router as ws_router
+from client.session import Session
+import asyncio
 
 app = FastAPI(title="SafeTalk")
 
@@ -18,6 +20,8 @@ app.add_middleware(
 
 Base.metadata.create_all(engine)
 
+app.include_router(auth_router, prefix="/auth")
+app.include_router(key_router, prefix="/key")
 app.token_url = "/login"
 app.include_router(auth_router)
 app.include_router(key_router)
