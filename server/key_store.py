@@ -32,19 +32,17 @@ async def get_message_history(
 ):
     me = db.query(User).filter(User.username == current_user).first()
     them = db.query(User).filter(User.username == username).first()
-
+ 
     if not them:
         raise HTTPException(status_code=404, detail="User not found")
-
+ 
     messages = db.query(Message).filter(
         or_(
-            and_(Message.sender_id == me.id,
-                 Message.recipient_id == them.id),
-            and_(Message.sender_id == them.id,
-                 Message.recipient_id == me.id)
+            and_(Message.sender_id == me.id, Message.recipient_id == them.id),
+            and_(Message.sender_id == them.id, Message.recipient_id == me.id)
         )
     ).order_by(Message.timestamp).all()
-
+ 
     return [
         {
             "from": msg.sender.username,
@@ -53,3 +51,4 @@ async def get_message_history(
         }
         for msg in messages
     ]
+ 

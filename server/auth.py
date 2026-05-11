@@ -11,7 +11,9 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-router = APIRouter(prefix="/auth", tags=["Authentication"])
+# No prefix here — main.py adds /auth when including the router
+router = APIRouter(tags=["Authentication"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-production")
@@ -45,14 +47,18 @@ def create_access_token(data: dict) -> str:
 
 # depending on 0auth2 is what extracts token from http header
 def verify_token(token: str = Depends(oauth2_scheme)) -> str:
+    try:
     # decode the JWT
-    token_data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    # extract username from payload["sub"]
-    username: str = token_data["sub"]
-    # raise HTTPException(401) if invalid or expired
-    if username is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
-    return username
+        token_data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # extract username from payload["sub"]
+        username: str = token_data["sub"]
+        # raise HTTPException(401) if invalid or expired
+        if username is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
+        return username
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Invalid or expired token")
 
 
 @router.post("/register", status_code=201)
