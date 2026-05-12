@@ -53,6 +53,7 @@ async def get_conversations(db: Session = Depends(get_db), current_user: str = D
     partners = db.query(User).filter(User.id.in_(partner_ids)).all()
     return [{"recipient_id": p.id, "username": p.username} for p in partners]
 
+
 @router.get("/{username}")
 async def get_public_key(
     username: str,
@@ -64,7 +65,7 @@ async def get_public_key(
     return {"username": username, "public_key": user.public_key}
 
 @router.get("/messages/{username}")
-async def get_message_history(
+async def get_messages(
     username: str,
     db: Session = Depends(get_db),
     current_user: str = Depends(verify_token)
@@ -118,3 +119,16 @@ async def send_message(
     db.commit()
 
     return {"message": "Message sent successfully"}
+
+#this is for the frontend to get a contact from the DB to text them
+@router.get("/users/search")
+async def search_users(
+    user: str,
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_token)
+):
+    users = db.query(User).filter(
+        User.username.ilike(f"%{user}%"),
+        User.username != current_user   # exclude me
+    ).limit(10).all()
+    return [{"username": u.username} for u in users]
