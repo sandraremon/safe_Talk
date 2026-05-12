@@ -281,7 +281,7 @@ export const SidebarNavigationSectionDividers = () => {
                                     className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm mt-2 mb-2 ${
                                         msg.fromMe
                                             ? "bg-white text-black rounded-br-sm"
-                                            : "bg-white/20 text-white rounded-bl-sm"
+                                            : "bg-white/20 text-black rounded-bl-sm"
                                     }`}
                                 >
                                     {msg.text}
@@ -317,4 +317,4 @@ export const SidebarNavigationSectionDividers = () => {
             </div>
         </div>
     );
-};
+};
