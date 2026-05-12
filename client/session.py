@@ -113,7 +113,7 @@ class Session:
 
     async def send(self, to_user: str, plaintext: str) -> None:
         aes_key = self.start_chat(to_user)
-        ciphertext = encrypt(aes_key, plaintext.encode('utf-8'))  # returns bytes
+        ciphertext = encrypt(aes_key, plaintext)  # returns bytes
 
         payload = {
             "to": to_user,
