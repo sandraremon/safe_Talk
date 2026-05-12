@@ -40,29 +40,18 @@ async def get_my_details(
 
 
 @router.get("/conversations")
-async def get_conversations(
-    db: Session = Depends(get_db),
-    current_user: str = Depends(verify_token)
-):
+async def get_conversations(db: Session = Depends(get_db), current_user: str = Depends(verify_token)):
     user = db.query(User).filter(User.username == current_user).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    sent_to = db.query(Message.recipient_id).filter(Message.sender_id == user.id)
-    received_from = db.query(Message.sender_id).filter(Message.recipient_id == user.id)
-    
-    chat_partner_ids = sent_to.union(received_from).all()
-    chat_partner_ids = [r[0] for r in chat_partner_ids]
+    partner_ids = {id for (id,) in db.query(Message.recipient_id)
+                   .filter(Message.sender_id == user.id)
+                   .union(db.query(Message.sender_id)
+                   .filter(Message.recipient_id == user.id))}
 
-    partners = db.query(User).filter(User.id.in_(chat_partner_ids)).all()
-
-    return [
-        {
-            "recipient_id": p.id,
-            "recipient_name": p.username,
-        }
-        for p in partners
-    ]
+    partners = db.query(User).filter(User.id.in_(partner_ids)).all()
+    return [{"recipient_id": p.id, "username": p.username} for p in partners]
 
 @router.get("/{username}")
 async def get_public_key(
