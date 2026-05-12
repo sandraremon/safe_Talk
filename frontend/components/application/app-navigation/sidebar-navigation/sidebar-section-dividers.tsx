@@ -61,6 +61,45 @@ export const SidebarNavigationSectionDividers = () => {
       fetchUserDetails().catch(console.error);
 
     }, []);
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        // Establish connection with token in query params
+        const socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+
+        socket.onopen = () => {
+            console.log("Connected to SafeTalk WebSocket");
+        };
+
+        socket.onmessage = (event) => {
+            const payload = JSON.parse(event.data);
+
+            // Check for new conversation events
+            if (payload.type === "new_chat") {
+                const newChat: ChatPreview = payload.data;
+
+                setChats((prev) => {
+                    // Prevent duplicates
+                    const exists = prev.find(c => c.recipient_id === newChat.recipient_id);
+                    if (exists) return prev;
+                    return [newChat, ...prev]; // Add to top of list
+                });
+            }
+        };
+
+        socket.onclose = (e) => {
+            console.log("WebSocket closed", e.reason);
+        };
+
+        socket.onerror = (err) => {
+            console.error("WebSocket error", err);
+        };
+        // CLEANUP: Closes socket when user closes app/tab
+        return () => {
+            socket.close();
+        };
+    }, []);
 
     const content = (
         <div className="flex h-full p-3">
@@ -70,7 +109,7 @@ export const SidebarNavigationSectionDividers = () => {
             >
                 <NavList activeChat={chats[0]?.recipient_id} chats={chats} className="mt-0.5 rounded-4xl"/>
 
-                <div className="mt-auto fle rounded-4xl flex-col gap-5 px-2 py-4 lg:gap-6 lg:px-4 lg:py-4">
+                <div className="mt-auto flex rounded-4xl flex-col gap-5 px-2 py-4 lg:gap-6 lg:px-4 lg:py-4">
                     <NavAccountCard user={userDetails as User}/>
                 </div>
             </aside>
@@ -79,7 +118,7 @@ export const SidebarNavigationSectionDividers = () => {
 
     return (
         <>
-            {/* Desktop sidebar navigation */}
+             {/* Desktop sidebar navigation */}
             <div className="lg:fixed lg:inset-y-0">{content}</div>
 
             {/* Placeholder to take up physical space because the real sidebar has `fixed` position. */}
