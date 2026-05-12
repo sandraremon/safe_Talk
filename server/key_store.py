@@ -27,8 +27,7 @@ async def update_public_key(
 @router.get("/{username}")
 async def get_public_key(
     username: str,
-    db: Session = Depends(get_db),
-    current_user: str = Depends(verify_token)
+    db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.username == username).first()
     if not user:

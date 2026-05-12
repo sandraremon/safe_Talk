@@ -33,9 +33,9 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@router.websocket("/ws/{username}")
+@router.websocket("/ws")
 async def websocket_endpoint(
-    username: str,
+    # username: str,
     websocket: WebSocket,
     token: str = Query(...),
 ):
@@ -43,15 +43,15 @@ async def websocket_endpoint(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         token_username = payload.get("sub")
-        if token_username != username:
-            await websocket.close(code=1008)
-            return
+        if token_username is None:
+            raise JWTError()
+    
     except JWTError:
         await websocket.close(code=1008)
         return
 
     # 2. Accept only after verification
-    await manager.connect(username, websocket)
+    await manager.connect(token_username, websocket)
 
     # 3. Open one DB session for the lifetime of this connection
     with Session(engine) as db:
@@ -68,12 +68,12 @@ async def websocket_endpoint(
 
                 delivered = await manager.send_to(
                     to_user,
-                    {"from": username, "ciphertext": ciphertext}
+                    {"from": token_username, "ciphertext": ciphertext}
                 )
 
                 # If recipient is offline, save to DB for later
                 if not delivered:
-                    sender = db.query(User).filter(User.username == username).first()
+                    sender = db.query(User).filter(User.username == token_username).first()
                     recipient = db.query(User).filter(User.username == to_user).first()
                     if sender and recipient:
                         msg = Message(
@@ -85,4 +85,4 @@ async def websocket_endpoint(
                         db.commit()
 
         except WebSocketDisconnect:
-            manager.disconnect(username)
+            manager.disconnect(token_username)
