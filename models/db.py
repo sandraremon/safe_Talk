@@ -1,4 +1,3 @@
-from typing import List
 from datetime import datetime, timezone
 
 from sqlalchemy import (
@@ -7,13 +6,11 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import (
     DeclarativeBase, Mapped,
-    mapped_column, relationship
+    mapped_column,
 )
-
 
 class Base(DeclarativeBase):
     pass
-
 
 class User(Base):
     __tablename__ = "user"
@@ -52,7 +49,7 @@ class Message(Base):
 
 
 engine = create_engine(
-    "mysql+pymysql://safetalk_user:safetalk_password@localhost/safeTalk",
+    "mysql+pymysql://root:20072901@localhost/safeTalk",
     echo=True
 )
 
