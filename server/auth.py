@@ -6,6 +6,8 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 #from passlib.hash import argon2
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.functions import current_user
+
 from  crypto.key_exchange import generate_keypair, save_private_key, serialize_public_key
 
 from models.db import User, engine
@@ -111,4 +113,3 @@ async def login(
 
     token = create_access_token(data={"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
-

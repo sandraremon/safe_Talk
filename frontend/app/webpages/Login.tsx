@@ -20,24 +20,37 @@ export default function Login() {
         formData.append("username", username);
         formData.append("password", password);
 
-        const response = await fetch("http://localhost:8000/login", {
-            method: "POST",
-            body: formData,
-        });
+        try {
 
-        setLoading(false);
+            console.log("1");
 
-        if (!response.ok) {
-            setErrorMessage(response.statusText);
-            return
+            const response = await fetch("http://localhost:8000/login", {
+                method: "POST",
+                body: formData,
+            });
+
+            console.log("2");
+
+            setLoading(false);
+
+            console.log("3");
+
+            if (!response.ok) {
+                setErrorMessage(response.statusText);
+                return
+            }
+
+            const data = await response.json();
+
+            console.log(data);
+            localStorage.setItem("token", data.access_token);
+
+            window.location.href = "/";
+        } catch (error) {
+            console.error("Error during login:", error);
+            setLoading(false);
+            setErrorMessage(error.message || "An unexpected error occurred.");
         }
-
-        const data = await response.json();
-
-        console.log(data);
-        localStorage.setItem("token", data.access_token);
-
-        window.location.href = "/";
     }
 
         async function handleSignUp(event: React.FormEvent<HTMLFormElement>) {
