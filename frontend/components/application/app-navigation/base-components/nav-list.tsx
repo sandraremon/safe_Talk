@@ -1,19 +1,17 @@
 import { useState } from "react";
 import { cx } from "../../../../utils/cx";
 import { NavItemBase } from "./nav-item";
-import type {SidebarNavigationProps} from "../sidebar-navigation/sidebar-section-dividers";
+import type {ChatPreview} from "~/Model/ChatPreview";
 
-export const NavList = ({activeChat, chats, className}: SidebarNavigationProps) => {
-    const [open, setOpen] = useState(false);
+export const NavList = ({chats, className}: {chats: ChatPreview[], className: string} ) => {
 
     return (
-        <ul className={cx("flex flex-col px-4 pt-5", className)}>
-            {chats.map((item, index) => {
-
+        <ul className={cx("flex flex-col px-4 pt-5" + className)}>
+            {chats.map((item) => {
                 if (chats.length) {
                     return (
                         <NavItemBase badge={null} icon={undefined} type="collapsible">
-                            {item.recipient_name}
+                            {item.username}
                         </NavItemBase>
                     );
                 }

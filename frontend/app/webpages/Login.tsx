@@ -24,7 +24,7 @@ export default function Login() {
 
             console.log("1");
 
-            const response = await fetch("http://localhost:8000/login", {
+            const response = await fetch("http://localhost:8000/auth/login", {
                 method: "POST",
                 body: formData,
             });
@@ -66,7 +66,7 @@ export default function Login() {
 
             try {
 
-            const response = await fetch("http://localhost:8000/register", {
+            const response = await fetch("http://localhost:8000/auth/register", {
                 method: "POST",
                 headers: {
                     "content-type": "application/json"

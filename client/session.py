@@ -112,6 +112,7 @@ class Session:
         pass
 
     async def send(self, to_user: str, plaintext: str) -> None:
+        print("SEEEEEEEEND")
         aes_key = self.start_chat(to_user)
         ciphertext = encrypt(aes_key, plaintext)  # returns bytes
 

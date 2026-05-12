@@ -1,10 +1,9 @@
 export class ChatPreview {
+    username: string;
+    recipient_id: number;
 
-    recipient_name: string;
-    recipient_id: bigint;
-
-    constructor(recipient_name: string, recipient_id: bigint) {
-        this.recipient_name = recipient_name;
+    constructor(username: string, recipient_id: number) {
+        this.username = username;
         this.recipient_id = recipient_id;
     }
 }

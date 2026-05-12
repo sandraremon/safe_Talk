@@ -35,7 +35,7 @@ export const NavItemBase = ({ current, type, badge, icon: Icon, children, trunca
         <Icon
             aria-hidden="true"
             className={cx(
-                "mr-2 size-5 shrink-0 text-fg-quaternary transition-inherit-all group-hover/item:text-fg-quaternary_hover",
+                "mr-2 size-5 shrink-0 rounded-4xl",
                 current && "text-fg-quaternary_hover",
             )}
         />
@@ -64,12 +64,9 @@ export const NavItemBase = ({ current, type, badge, icon: Icon, children, trunca
 
     if (type === "collapsible") {
         return (
-            <summary className={cx("p-2 rounded-4xl", styles.root, current && styles.rootSelected)} onClick={onClick}>
-                {iconElement}
+            <summary className={cx("p-2 rounded-4xl", styles.root, current && styles.rootSelected)} style={{borderRadius: "20px"}} onClick={onClick}>
 
                 {labelElement}
-
-                {badgeElement}
             </summary>
         );
     }
@@ -78,7 +75,7 @@ export const NavItemBase = ({ current, type, badge, icon: Icon, children, trunca
         return (
             <AriaLink
                 rel="noopener noreferrer"
-                className={cx("py-2 pr-3 pl-10", styles.root, current && styles.rootSelected)}
+                className={cx("py-2 pr-3 pl-10 rounded-4xl", styles.root, current && styles.rootSelected)}
                 onClick={onClick}
                 aria-current={current ? "page" : undefined}
             >
@@ -91,7 +88,7 @@ export const NavItemBase = ({ current, type, badge, icon: Icon, children, trunca
     return (
         <AriaLink
             rel="noopener noreferrer"
-            className={cx("group/item p-2", styles.root, current && styles.rootSelected)}
+            className={cx("group/item p-2 rounded-4xl", styles.root, current && styles.rootSelected)}
             onClick={onClick}
             aria-current={current ? "page" : undefined}
         >
