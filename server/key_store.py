@@ -66,15 +66,28 @@ async def get_message_history(
 
 
 @router.post("/sendMessage")
-async def get_user_conversations(
-        plaintext: str,
-        to_user: int,
-        db: Session = Depends(get_db),
-        current_user: str = Depends(verify_token)
+async def send_message(
+    plaintext: str,
+    username: str,
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_token)
 ):
-    db.add(Message(
-        sender_id = db.query(User).filter(current_user == User.username).first().id,
-        recipient_id = db.query(User).filter(User.id == to_user).first().id,
-        ciphertext = encrypt(os.urandom(32), plaintext.encode("utf-8"))
-    ))
+    sender = db.query(User).filter(User.username == current_user).first()
+    recipient = db.query(User).filter(User.username == username).first()
+
+    if not sender:
+        raise HTTPException(status_code=404, detail="Sender not found")
+
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+
+    message = Message(
+        sender_id=sender.id,
+        recipient_id=recipient.id,
+        ciphertext=encrypt(os.urandom(32), plaintext.encode("utf-8"))
+    )
+
+    db.add(message)
     db.commit()
+
+    return {"message": "Message sent successfully"}

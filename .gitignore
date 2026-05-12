@@ -1,2 +1,6 @@
 ziad_private_key.pem
 .env
+crypto/__pycache__/
+models/__pycache__/
+client/__pycache__/
+server/__pycache__/
