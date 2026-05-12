@@ -34,13 +34,11 @@ class Session:
         self.base_url = base_url
         self.ws_url = ws_url
         self.key_file = key_file
-        #this is the digital identity , its in the browser you use , saved the PR
         if Path(self.key_file).exists():
             self.private_key = load_private_key(self.key_file)
             self.public_key = self.private_key.public_key()
         else:
             self.private_key, self.public_key = generate_keypair()
-            # Save it to the correct path!
             save_private_key(self.private_key, path=self.key_file)
 
         self.username= None
@@ -51,9 +49,7 @@ class Session:
         self.http= httpx.Client()
 
     def register(self, username: str, email: str, password: str) -> None:
-        #save the identity of user upon registration
         save_private_key(self.private_key)
-        #get the public key but first serialize for the server to store
         public_hex = serialize_public_key(self.public_key)
         resp = self.http.post(
             f"{self.base_url}/auth/register",
@@ -79,7 +75,6 @@ class Session:
         self.token = resp.json()["access_token"]
         self.username = username
 
-        #  now it fetches the correct updated key and replace it
         public_hex = serialize_public_key(self.public_key)
         self.http.put(
             f"{self.base_url}/key/update",
@@ -89,33 +84,28 @@ class Session:
 
 #contact is the person i wanna contact and talk to
     def start_chat(self, contact: str) -> bytes | None:
-        #if i already have this contact before then just return the secrete key
         if contact in self._session_keys:
             return self._session_keys[contact]
 
-        #if i don't then am get their data from header to get their public key to then create our shared secret key
         resp = self.http.get(
             f"{self.base_url}/key/{contact}",
             headers={"Authorization": f"Bearer {self.token}"}
         )
 
-
         their_pub = deserialize_public_key(resp.json()["public_key"])
         shared_secret = ecdh(self.private_key, their_pub)
 
-        # making my public key and my contacts back to hex to derive it so its more secure
+
         my_pub_raw = self.public_key.public_bytes(Encoding.Raw, PublicFormat.Raw)
         their_pub_raw = their_pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
 
-        # HKDF — stretch shared secret into a proper 32-byte AES key
         aes_key = derive(shared_secret, my_pub_raw,their_pub_raw)
-        # saving that contact session keys in case i talked to them again
         self._session_keys[contact] = aes_key
         return aes_key
 
 
     async def connect(self) -> None:
-        uri = f"{self.ws_url}/ws/{self.username}?token={self.token}"
+        uri = f"{self.ws_url}/ws?token={self.token}"
         self._ws = await websockets.connect(uri)
 
     async def disconnect(self) -> None:
