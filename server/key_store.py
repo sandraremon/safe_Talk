@@ -59,7 +59,7 @@ async def get_conversations(
     return [
         {
             "recipient_id": p.id,
-            "username": p.username,
+            "recipient_name": p.username,
         }
         for p in partners
     ]
