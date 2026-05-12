@@ -61,6 +61,19 @@ async def get_public_key(
         raise HTTPException(status_code=404, detail="User not found")
     return {"username": username, "public_key": user.public_key}
 
+#this is for the frontend to get a contact from the DB to text them
+@router.get("/users/search")
+async def search_users(
+    user: str,
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_token)
+):
+    users = db.query(User).filter(
+        User.username.ilike(f"%{user}%"),
+        User.username != current_user   # exclude me
+    ).limit(10).all()
+    return [{"username": u.username} for u in users]
+
 @router.get("/messages/{username}")
 async def get_messages(
     username: str,
@@ -69,25 +82,28 @@ async def get_messages(
 ):
     me = db.query(User).filter(User.username == current_user).first()
     them = db.query(User).filter(User.username == username).first()
- 
+
     if not them:
         raise HTTPException(status_code=404, detail="User not found")
- 
+
     messages = db.query(Message).filter(
         or_(
             and_(Message.sender_id == me.id, Message.recipient_id == them.id),
             and_(Message.sender_id == them.id, Message.recipient_id == me.id)
         )
     ).order_by(Message.timestamp).all()
- 
+
+    # Fix #7: build a {id -> username} map so frontend gets a string, not an integer
+    name_map = {me.id: me.username, them.id: them.username}
+
     return [
-    {
-        "from": msg.sender_id,
-        "ciphertext": msg.ciphertext.hex(),
-        "timestamp": msg.timestamp.isoformat()
-    }
-    for msg in messages
-]
+        {
+            "from": name_map.get(msg.sender_id, str(msg.sender_id)),
+            "ciphertext": msg.ciphertext.hex(),
+            "timestamp": msg.timestamp.isoformat()
+        }
+        for msg in messages
+    ]
 
 @router.post("/sendMessage")
 async def send_message(
@@ -115,16 +131,4 @@ async def send_message(
     db.commit()
 
     return {"message": "Message sent successfully"}
-
-#this is for the frontend to get a contact from the DB to text them
-@router.get("/users/search")
-async def search_users(
-    user: str,
-    db: Session = Depends(get_db),
-    current_user: str = Depends(verify_token)
-):
-    users = db.query(User).filter(
-        User.username.ilike(f"%{user}%"),
-        User.username != current_user   # exclude me
-    ).limit(10).all()
-    return [{"username": u.username} for u in users]
+

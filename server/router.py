@@ -159,7 +159,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
 
                 delivered = await manager.send_to(
                     to_user,
-                    {"type": "message", "from": token_username, "ciphertext": ciphertext}
+                    {"type": "message", "from": token_username, "ciphertext": ciphertext_hex}
                 )
 
                 if not delivered:
