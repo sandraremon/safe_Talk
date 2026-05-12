@@ -157,14 +157,14 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
                     )
                 ).first()
 
+                # Always save message to DB for history
+                db.add(Message(sender_id=sender.id, recipient_id=recipient.id, ciphertext=ciphertext, timestamp=datetime.now(timezone.utc)))
+                db.commit()
+
                 delivered = await manager.send_to(
                     to_user,
                     {"type": "message", "from": token_username, "ciphertext": ciphertext_hex}
                 )
-
-                if not delivered:
-                    db.add(Message(sender_id=sender.id, recipient_id=recipient.id, ciphertext=ciphertext,timestamp=datetime.now(timezone.utc)))
-                    db.commit()
 
                 if is_new_chat:
                     await manager.send_to(to_user, {"type": "new_chat", "data": {"recipient_id": sender.id, "username": token_username}})

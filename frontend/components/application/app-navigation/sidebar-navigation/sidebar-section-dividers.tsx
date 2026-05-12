@@ -29,6 +29,11 @@ export const SidebarNavigationSectionDividers = () => {
 
     // ── Fix #5: track which conversation is currently open ──
     const [activeChat, setActiveChat] = useState<ChatPreview | null>(null);
+    const activeChatRef = useRef<ChatPreview | null>(null);
+
+    useEffect(() => {
+        activeChatRef.current = activeChat;
+    }, [activeChat]);
 
     // ── Search State ──
     const [searchQuery, setSearchQuery] = useState("");
@@ -95,7 +100,9 @@ export const SidebarNavigationSectionDividers = () => {
             }
 
             if (payload.type === "message") {
-                setMessages(prev => [...prev, { text: decodeHex(payload.ciphertext), fromMe: false }]);
+                if (activeChatRef.current?.username === payload.from) {
+                    setMessages(prev => [...prev, { text: decodeHex(payload.ciphertext), fromMe: false }]);
+                }
             }
         };
 
