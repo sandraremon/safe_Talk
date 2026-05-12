@@ -1,9 +1,6 @@
 from sqlalchemy import and_, or_
-
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from fastapi import APIRouter
-
 import os
 from datetime import datetime
 from crypto.encryption import encrypt

@@ -135,9 +135,13 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
             while True:
                 data = await websocket.receive_json()
                 to_user = data.get("to")
-                ciphertext = data.get("ciphertext").encode('utf-8')
-
-                if not to_user or not ciphertext:  # fix 1
+                # ciphertext comes as hex string from client, decode to bytes
+                ciphertext_hex = data.get("ciphertext")
+                if not ciphertext_hex:
+                    continue
+                try:
+                    ciphertext = bytes.fromhex(ciphertext_hex)
+                except ValueError:
                     continue
 
                 sender = db.query(User).filter(User.username == token_username).first()
