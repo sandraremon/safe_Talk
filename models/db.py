@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
-
+from dotenv import load_dotenv
+import os
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 from sqlalchemy import (
     ForeignKey, create_engine,
     String, DateTime, LargeBinary
@@ -49,7 +52,7 @@ class Message(Base):
 
 
 engine = create_engine(
-    "mysql+pymysql://root:20072901@localhost/safeTalk",
+    DATABASE_URL,
     echo=True
 )
 
