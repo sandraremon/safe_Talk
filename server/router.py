@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from models.db import Message, User, engine
 from server.auth import SECRET_KEY, ALGORITHM
+from sqlalchemy import and_, or_
 
 router = APIRouter()
 
@@ -60,15 +61,29 @@ async def websocket_endpoint(
                 data = await websocket.receive_json()
 
                 to_user = data.get("to")
-                ciphertext = data.get("ciphertext")
+                #ciphertext = data.get("ciphertext")
+                text= data.get("text") #bcuz its coming from front as plain
 
                 # Guard against malformed messages
-                if not to_user or not ciphertext:
+                if not to_user or not text:
                     continue
+
+                sender = db.query(User).filter(User.username == token_username).first()
+                recipient = db.query(User).filter(User.username == to_user).first()
+                if not sender or not recipient:
+                    continue
+                    # Check if this is the first message between them
+                existing = db.query(Message).filter(
+                     or_(
+                        and_(Message.sender_id == sender.id, Message.recipient_id == recipient.id),
+                        and_(Message.sender_id == recipient.id, Message.recipient_id == sender.id)
+                    )
+                ).first()
+                is_new_chat = existing is None
 
                 delivered = await manager.send_to(
                     to_user,
-                    {"from": token_username, "ciphertext": ciphertext}
+                    {"type": "message","from": token_username, "text": text}
                 )
 
                 # If recipient is offline, save to DB for later
@@ -79,10 +94,20 @@ async def websocket_endpoint(
                         msg = Message(
                             sender_id=sender.id,
                             recipient_id=recipient.id,
-                            ciphertext=bytes.fromhex(ciphertext),
+                            ciphertext=text.encode("utf-8"),
                         )
                         db.add(msg)
                         db.commit()
+                # Push new_chat event to BOTH users if this is their first message
+                if is_new_chat:
+                      await manager.send_to(to_user, {
+                            "type": "new_chat",
+                            "data": {"recipient_id": sender.id, "username": token_username}
+                      })
+                      await manager.send_to(token_username, {
+                             "type": "new_chat",
+                             "data": {"recipient_id": recipient.id, "username": to_user}
+                      })
 
         except WebSocketDisconnect:
             manager.disconnect(token_username)
