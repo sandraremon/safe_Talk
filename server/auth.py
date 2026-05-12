@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
+from pydantic import BaseModel
 #from passlib.hash import argon2
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, scoped_session, sessionmaker
+from sqlalchemy.orm import Session
 from  crypto.key_exchange import generate_keypair, save_private_key, serialize_public_key
 
 from models.db import User, engine
@@ -19,7 +20,6 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # No prefix here — main.py adds /auth when including the router
 router = APIRouter(tags=["Authentication"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-production")
@@ -68,25 +68,28 @@ def verify_token(token: str = Depends(oauth2_scheme)) -> str:
                             detail="Invalid or expired token")
 
 
+class RegisterModel(BaseModel):
+    username: str
+    password: str
+    email: str
+
 @router.post("/register", status_code=201)
 async def register(
-    username: str,
-    email: str,
-    password: str,
+    user: RegisterModel,
     db: Session = Depends(get_db)
 ):
 
-    existing_user = db.query(User).filter(User.username == username).first()
+    existing_user = db.query(User).filter(User.username == user.username).first()
     if existing_user is None:
         private_key, public_key = generate_keypair()
         public_hex = serialize_public_key(public_key)
         new_user = User(
-            username=username,
-            email=email,
-            password_hash=pwd_context.hash(password),
+            username=user.username,
+            email=user.email,
+            password_hash=pwd_context.hash(user.password),
             public_key=public_hex
         )
-        save_private_key(private_key, path=f"{username}_private_key.pem")
+        save_private_key(private_key, path=f"{user.username}_private_key.pem")
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
@@ -94,9 +97,7 @@ async def register(
     db.add(new_user)
     db.commit()
 
-    return {"message": "registered"}
-
-
+    return await login(form_data=OAuth2PasswordRequestForm(username=user.username, password=user.password), db=db)
 
 @router.post("/login", status_code=201)
 async def login(

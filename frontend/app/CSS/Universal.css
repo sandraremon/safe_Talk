@@ -82,7 +82,8 @@ footer {
 }
 
 label {
-    padding-bottom: 8px;
+    display: flex;
+    padding-bottom: 10px;
     align-self: flex-start;
 }
 
