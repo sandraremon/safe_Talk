@@ -4,6 +4,7 @@ from jose import JWTError, jwt
 from models.db import Message, User, engine
 from server.auth import SECRET_KEY, ALGORITHM
 from sqlalchemy import and_, or_
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -112,6 +113,9 @@ manager = ConnectionManager()
 
 #         except WebSocketDisconnect:
 #             manager.disconnect(token_username)
+@router.get("/ws-test")
+def ws_test():
+        return {"ok": True}
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
@@ -131,7 +135,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
             while True:
                 data = await websocket.receive_json()
                 to_user = data.get("to")
-                ciphertext = data.get("ciphertext")
+                ciphertext = data.get("ciphertext").encode('utf-8')
 
                 if not to_user or not ciphertext:  # fix 1
                     continue
@@ -155,7 +159,7 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
                 )
 
                 if not delivered:
-                    db.add(Message(sender_id=sender.id, recipient_id=recipient.id, ciphertext=ciphertext))
+                    db.add(Message(sender_id=sender.id, recipient_id=recipient.id, ciphertext=ciphertext,timestamp=datetime.now(timezone.utc)))
                     db.commit()
 
                 if is_new_chat:

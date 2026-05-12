@@ -56,4 +56,5 @@ engine = create_engine(
     echo=True
 )
 
+
 Base.metadata.create_all(engine)

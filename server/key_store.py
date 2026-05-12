@@ -84,14 +84,13 @@ async def get_messages(
     ).order_by(Message.timestamp).all()
  
     return [
-        {
-            "from": msg.sender_id,
-            "ciphertext": msg.ciphertext.hex(),
-            "timestamp": msg.timestamp.isoformat()
-        }
-        for msg in messages
-    ]
-
+    {
+        "from": msg.sender_id,
+        "ciphertext": msg.ciphertext.hex(),
+        "timestamp": msg.timestamp.isoformat()
+    }
+    for msg in messages
+]
 
 @router.post("/sendMessage")
 async def send_message(
