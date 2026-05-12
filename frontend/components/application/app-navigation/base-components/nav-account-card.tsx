@@ -1,15 +1,14 @@
 import type { FC, HTMLAttributes } from "react";
 import { useCallback, useEffect, useRef } from "react";
 import type { Placement } from "@react-types/overlays";
-import { BookOpen01, ChevronSelectorVertical, LogOut01, Plus, Settings01, User01 } from "@untitledui/icons";
+import { LogOut01 } from "@untitledui/icons";
 import { useFocusManager } from "react-aria";
 import type { DialogProps as AriaDialogProps } from "react-aria-components";
-import { Button as AriaButton, Dialog as AriaDialog, DialogTrigger as AriaDialogTrigger, Popover as AriaPopover } from "react-aria-components";
-import { AvatarLabelGroup } from "../../../base/avatar/avatar-label-group";
-import { Button } from "../../../base/buttons/button";
-import { RadioButtonBase } from "../../../base/radio-buttons/radio-buttons";
+import { Dialog as AriaDialog} from "react-aria-components";
 import { useBreakpoint } from "../../../../hooks/use-breakpoint";
 import { cx } from "../../../../utils/cx";
+import {Button} from "@heroui/react";
+import type {User} from "~/Model/User";
 
 export type NavAccountType = {
     /** Unique identifier for the nav item. */
@@ -23,23 +22,6 @@ export type NavAccountType = {
     /** Online status of the account holder. This is used to display the online status indicator. */
     status: "online" | "offline";
 };
-
-const placeholderAccounts: NavAccountType[] = [
-    {
-        id: "caitlyn",
-        name: "Caitlyn King",
-        email: "caitlyn@untitledui.com",
-        avatar: "https://www.untitledui.com/images/avatars/caitlyn-king?fm=webp&q=80",
-        status: "online",
-    },
-    {
-        id: "sienna",
-        name: "Sienna Hewitt",
-        email: "sienna@untitledui.com",
-        avatar: "https://www.untitledui.com/images/avatars/transparent/sienna-hewitt?bg=%23E0E0E0",
-        status: "online",
-    },
-];
 
 export const AccountManager = ({className, selectedAccountId = "olivia", ...dialogProps}: AriaDialogProps & { className?: string; accounts?: NavAccountType[]; selectedAccountId?: string }) => {
 
@@ -118,48 +100,25 @@ const NavAccountCardMenuItem = ({
     );
 };
 
-export const NavAccountCard = ({popoverPlacement, selectedAccountId = "Unknown", items = placeholderAccounts, avatarRounded,}: { popoverPlacement?: Placement; selectedAccountId?: string; items?: NavAccountType[]; avatarRounded?: boolean; }) => {
+export const NavAccountCard = ({user}: {user: User}) => {
     const triggerRef = useRef<HTMLDivElement>(null);
     const isDesktop = useBreakpoint("lg");
-
-    const selectedAccount = items.find((account) => account.id === selectedAccountId);
-
-    if (!selectedAccount) {
-        console.warn(`Account with ID ${selectedAccountId} not found in <NavAccountCard />`);
-    }
 
     return (
         <div ref={triggerRef} className="relative rounded-3xl flex items-center justify-between gap-3 p-3 bg-primary shadow-2xs">
             <div className="flex items-center gap-3">
-                <img src="/cryptalk-logo%201.png" alt={selectedAccount?.name} className={cx("size-10 rounded-full", avatarRounded && "rounded-full")} />
+                <img src="/cryptalk-logo%201.png" alt="logo" className={cx("size-10 rounded-full")} />
 
                 <div className="flex flex-col gap-x-0.5 text-sm">
-                    <p className="font-bold">{selectedAccountId}</p>
-                    <p className="text-xs font-semibold">{selectedAccountId}</p>
+                    <p className="font-bold">{user?.username || "Unknown"}</p>
+                    <p className="text-xs font-semibold">{user?.email || "Unknown"}</p>
                 </div>
             </div>
-
-            <AriaDialogTrigger>
-                <AriaButton className="flex cursor-pointer items-center justify-center rounded-md p-1.5 text-fg-quaternary outline-focus-ring transition duration-100 ease-linear hover:bg-primary_hover hover:text-fg-quaternary_hover focus-visible:outline-2 focus-visible:outline-offset-2 pressed:bg-primary_hover pressed:text-fg-quaternary_hover">
-                    <ChevronSelectorVertical className="size-4 shrink-0 stroke-[2.25px]" />
-                </AriaButton>
-                <AriaPopover
-                    placement={popoverPlacement ?? (isDesktop ? "right bottom" : "top right")}
-                    triggerRef={triggerRef}
-                    offset={8}
-                    className={({ isEntering, isExiting }) =>
-                        cx(
-                            "origin-(--trigger-anchor-point) will-change-transform",
-                            isEntering &&
-                                "duration-150 ease-out animate-in fade-in placement-right:slide-in-from-left-0.5 placement-top:slide-in-from-bottom-0.5 placement-bottom:slide-in-from-top-0.5",
-                            isExiting &&
-                                "duration-100 ease-in animate-out fade-out placement-right:slide-out-to-left-0.5 placement-top:slide-out-to-bottom-0.5 placement-bottom:slide-out-to-top-0.5",
-                        )
-                    }
-                >
-                    <AccountManager selectedAccountId={selectedAccountId} accounts={items} />
-                </AriaPopover>
-            </AriaDialogTrigger>
+            <div>
+                <Button variant="danger-soft" className="rounded-4xl" isIconOnly>
+                    <img src="/images/assets/door.left.hand.open@4x.png" alt="Logout" className="w-3.5" />
+                </Button>
+            </div>
         </div>
     );
 };

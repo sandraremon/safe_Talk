@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from fastapi import APIRouter
 
 import os
+from datetime import datetime
 from crypto.encryption import encrypt
 from models.db import Message, User, engine
 from server.auth import get_db, verify_token
@@ -24,6 +25,45 @@ async def update_public_key(
     return {"message": "key updated"}
 
 
+@router.get("/mydetails")
+async def get_my_details(
+        db: Session = Depends(get_db),
+        current_user: str = Depends(verify_token)
+):
+    print("HELLLLLLLO")
+    user = db.query(User).filter(User.username == current_user).first()
+    print(user)
+    print(current_user)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"username": user.username, "email": user.email}
+
+
+@router.get("/conversations")
+async def get_conversations(
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_token)
+):
+    user = db.query(User).filter(User.username == current_user).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    sent_to = db.query(Message.recipient_id).filter(Message.sender_id == user.id)
+    received_from = db.query(Message.sender_id).filter(Message.recipient_id == user.id)
+    
+    chat_partner_ids = sent_to.union(received_from).all()
+    chat_partner_ids = [r[0] for r in chat_partner_ids]
+
+    partners = db.query(User).filter(User.id.in_(chat_partner_ids)).all()
+
+    return [
+        {
+            "recipient_id": p.id,
+            "username": p.username,
+        }
+        for p in partners
+    ]
+
 @router.get("/{username}")
 async def get_public_key(
     username: str,
@@ -34,8 +74,6 @@ async def get_public_key(
         raise HTTPException(status_code=404, detail="User not found")
     return {"username": username, "public_key": user.public_key}
 
-
-# 
 @router.get("/messages/{username}")
 async def get_message_history(
     username: str,

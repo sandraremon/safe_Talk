@@ -41,7 +41,7 @@ export const SidebarNavigationSectionDividers = () => {
       fetchChats().catch(console.error);
 
       const fetchUserDetails = async () => {
-          const response = await fetch("http://localhost:8080/mydetails", {
+          const response = await fetch("http://localhost:8000/mydetails", {
               method: "GET",
               headers: {
                   Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -58,6 +58,8 @@ export const SidebarNavigationSectionDividers = () => {
           setUserDetails(data);
       }
 
+      fetchUserDetails().catch(console.error);
+
     }, []);
 
     const content = (
@@ -69,7 +71,7 @@ export const SidebarNavigationSectionDividers = () => {
                 <NavList activeChat={chats[0]?.recipient_id} chats={chats} className="mt-0.5 rounded-4xl"/>
 
                 <div className="mt-auto fle rounded-4xl flex-col gap-5 px-2 py-4 lg:gap-6 lg:px-4 lg:py-4">
-                    <NavAccountCard/>
+                    <NavAccountCard user={userDetails as User}/>
                 </div>
             </aside>
         </div>
