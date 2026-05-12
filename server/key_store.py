@@ -1,4 +1,4 @@
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, case, func
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 import os
@@ -35,20 +35,49 @@ async def get_my_details(
         raise HTTPException(status_code=404, detail="User not found")
     return {"username": user.username, "email": user.email}
 
-
 @router.get("/conversations")
-async def get_conversations(db: Session = Depends(get_db), current_user: str = Depends(verify_token)):
+async def get_conversations(
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_token)
+):
     user = db.query(User).filter(User.username == current_user).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    partner_ids = {id for (id,) in db.query(Message.recipient_id)
-                   .filter(Message.sender_id == user.id)
-                   .union(db.query(Message.sender_id)
-                   .filter(Message.recipient_id == user.id))}
+    partner_id_expr = case(
+        (Message.sender_id == user.id, Message.recipient_id),
+        else_=Message.sender_id
+    )
 
-    partners = db.query(User).filter(User.id.in_(partner_ids)).all()
-    return [{"recipient_id": p.id, "username": p.username} for p in partners]
+    conversations = (
+        db.query(
+            func.max(Message.timestamp).label("last_time"),
+            partner_id_expr.label("partner_id")
+        )
+        .filter(
+            or_(
+                Message.sender_id == user.id,
+                Message.recipient_id == user.id
+            )
+        )
+        .group_by(partner_id_expr)
+        .subquery()
+    )
+
+    results = (
+        db.query(User, conversations.c.last_time)
+        .join(conversations, User.id == conversations.c.partner_id)
+        .order_by(conversations.c.last_time.desc())
+        .all()
+    )
+
+    return [
+        {
+            "username": partner.username,
+            "last_message_time": last_time.isoformat() if last_time else None
+        }
+        for partner, last_time in results
+    ]
 
 
 @router.get("/{username}")
@@ -102,7 +131,7 @@ async def get_messages(
             "ciphertext": msg.ciphertext.hex(),
             "timestamp": msg.timestamp.isoformat()
         }
-        for msg in messages
+        for msg in sorted(messages, key=lambda m: m.timestamp)
     ]
 
 @router.post("/sendMessage")
@@ -131,4 +160,4 @@ async def send_message(
     db.commit()
 
     return {"message": "Message sent successfully"}
-
+
