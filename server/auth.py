@@ -10,6 +10,10 @@ from  crypto.key_exchange import generate_keypair, save_private_key, serialize_p
 from models.db import User, engine
 import os
 from passlib.context import CryptContext
+from dotenv import load_dotenv
+
+load_dotenv()
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -18,7 +22,7 @@ router = APIRouter(tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-production")
+# SECRET_KEY = os.environ.get("SECRET_KEY", "change-this-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -51,6 +55,7 @@ def create_access_token(data: dict) -> str:
 def verify_token(token: str = Depends(oauth2_scheme)) -> str:
     try:
     # decode the JWT
+
         token_data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         # extract username from payload["sub"]
         username: str = token_data["sub"]
