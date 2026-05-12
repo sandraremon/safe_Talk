@@ -98,7 +98,6 @@ class Session:
             f"{self.base_url}/key/{contact}",
             headers={"Authorization": f"Bearer {self.token}"}
         )
-        server_hex = resp.json()["public_key"]
 
 
         their_pub = deserialize_public_key(resp.json()["public_key"])
