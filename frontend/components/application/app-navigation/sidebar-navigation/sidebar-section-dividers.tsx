@@ -234,80 +234,92 @@ export const SidebarNavigationSectionDividers = () => {
             <div className="lg:fixed lg:inset-y-0 lg:left-0 z-10">
                 {sidebar}
             </div>
+        
+                        {/* Main chat area */}
+  {activeChat ? (
+    <div
+        className="flex fixed flex-col self-center justify-center overflow-auto border-secondary bg-secondary pt-4 shadow-xs md:border-r rounded-3xl lg:border mr-6"
+        style={{
+            marginLeft: MAIN_SIDEBAR_WIDTH + 40,
+            background: "var(--form-background-color)",
+            height: "calc(100vh - 20px)",
+            width: "calc(100vw - 292px - 50px)",
+        }}
+    >
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-3xl">
 
-            {/* Main chat area */}
-            <div className="flex fixed flex-col self-center justify-center overflow-auto border-secondary bg-secondary pt-4 shadow-xs md:border-r rounded-3xl lg:border mr-6"
-                style={{
-                    marginLeft: MAIN_SIDEBAR_WIDTH + 40,
-                    background: "var(--form-background-color)",
-                    height: "calc(100vh - 20px)",
-                    width: "calc(100vw - 292px - 50px)",
-                }}>
+            {/* Chat header */}
+            <div className="px-6 py-4 border-b border-white/20 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                    {activeChat.username[0].toUpperCase()}
+                </div>
+                <span className="text-white font-semibold">{activeChat.username}</span>
+            </div>
 
-                <div className="flex h-full w-full flex-col overflow-hidden rounded-3xl">
-
-                    {/* Chat header — shows active conversation name */}
-                    {activeChat && (
-                        <div className="px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                                {activeChat.username[0].toUpperCase()}
-                            </div>
-                            <span className="text-white font-semibold">{activeChat.username}</span>
-                        </div>
-                    )}
-
-                    {/* Messages area */}
-                    <div className="w-full pr-6 pl-6 h-full flex flex-col overflow-auto">
-                        {!activeChat && (
-                            <div className="flex-1 flex items-center justify-center">
-                                <p className="text-white/40 text-sm">Select a conversation or search for a user to start chatting.</p>
-                            </div>
-                        )}
-                        {activeChat && messages.length === 0 && (
-                            <div className="flex-1 flex items-center justify-center">
-                                <p className="text-white/40 text-sm">No messages yet. Say hello to {activeChat.username}!</p>
-                            </div>
-                        )}
-                        {messages.map((msg, i) => (
-                            <div key={i} className={`flex ${msg.fromMe ? "justify-end" : "justify-start"}`}>
-                                <div
-                                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm mt-2 mb-2 ${
-                                        msg.fromMe
-                                            ? "bg-white text-black rounded-br-sm"
-                                            : "bg-white/20 text-black rounded-bl-sm"
-                                    }`}
-                                >
-                                    {msg.text}
-                                </div>
-                            </div>
-                        ))}
-                        <div ref={messagesEndRef} />
+            {/* Messages */}
+            <div className="w-full pr-6 pl-6 h-full flex flex-col overflow-auto">
+                {messages.length === 0 && (
+                    <div className="flex-1 flex items-center justify-center">
+                        <p className="text-white/40 text-sm">
+                            No messages yet. Say hello to {activeChat.username}!
+                        </p>
                     </div>
+                )}
 
-                    {/* Message input bar */}
-                    <div className="px-4 py-4 bg-white/10 backdrop-blur-sm border-t border-white/20">
-                        <div className="flex p-20 items-center gap-3 rounded-full px-4 py-2">
-                            <input
-                                type="text"
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                                placeholder={activeChat ? `Message ${activeChat.username}…` : "Select a chat first…"}
-                                disabled={!activeChat}
-                                className="text-chat placeholder-purple-300 text-sm outline-none"
-                            />
-
-                            {/* Send button */}
-                            <button
-                                onClick={handleSend}
-                                disabled={!activeChat}
-                                className="rounded-full bg-purple-500 flex items-center justify-center hover:bg-white/90 transition-colors disabled:opacity-50" style={{height: "50px", width: "50px", padding: "12px", background: "var(--primary-color)"}}>
-                                <img src="/images/assets/arrow.up.right@4x.png" width="20px" alt="Send"/>
-                            </button>
+                {messages.map((msg, i) => (
+                    <div key={i} className={`flex ${msg.fromMe ? "justify-end" : "justify-start"}`}>
+                        <div
+                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm mt-2 mb-2 ${
+                                msg.fromMe
+                                    ? "bg-white text-black rounded-br-sm"
+                                    : "bg-white/20 text-black rounded-bl-sm"
+                            }`}
+                        >
+                            {msg.text}
                         </div>
                     </div>
+                ))}
+
+                <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="px-4 py-4 bg-white/10 backdrop-blur-sm border-t border-white/20">
+                <div className="flex items-center gap-3 px-3 py-2">
+                    <input
+                        type="text"
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                        placeholder={`Message ${activeChat.username}…`}
+                        className="text-chat placeholder-purple-300 text-sm outline-none"
+                    />
+
+                    <button
+                        onClick={handleSend}
+                        className="rounded-full bg-purple-500 flex items-center justify-center hover:bg-white/90 transition-colors"
+                        style={{height: "50px", width: "50px", padding: "12px", background: "var(--primary-color)"}}
+                    >
+                        <img src="/images/assets/arrow.up.right@4x.png" width="20px" alt="Send"/>
+                    </button>
                 </div>
             </div>
+
         </div>
+    </div>
+) : (
+    <div
+        style={{
+           
+           marginLeft: MAIN_SIDEBAR_WIDTH, // only offset for sidebar
+        height: "100vh",
+        width: "calc(100vw - 292px)", // full remaining width
+        }}
+        className="flex items-center justify-center text-black/40"
+    >
+        Select a chat to start messaging
+    </div>
+)}
+</div>
     );
 };
