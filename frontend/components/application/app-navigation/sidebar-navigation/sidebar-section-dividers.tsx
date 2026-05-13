@@ -30,7 +30,7 @@ export const SidebarNavigationSectionDividers = () => {
 
     // ── Search State ──
     const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<{username: string}[]>([]);
+    const [searchResults, setSearchResults] = useState<{username: string, email: string}[]>([]);
 
     // Auto-scroll to the newest message
     useEffect(() => {
@@ -140,6 +140,7 @@ export const SidebarNavigationSectionDividers = () => {
             setSearchResults([]);
             return;
         }
+
         const delayDebounceFn = setTimeout(() => {
             const token = localStorage.getItem("token");
             fetch(`${API_URL}/key/users/search?user=${encodeURIComponent(searchQuery)}`, {
@@ -194,7 +195,7 @@ export const SidebarNavigationSectionDividers = () => {
                 <div className="px-4 pb-2 relative z-20">
                     <Fieldset className="flex bg-white pr-3.5 pl-3.5 rounded-4xl flex-col gap-2 w-full" style={{maxWidth: "300px"}}>
                         <TextField className="flex flex-row items-center gap-2 w-full">
-                            <img src="/images/assets/magnifyingglass@4x.png" className="invert-50" width="20px" alt="Search"/>
+                            <img src="/images/assets/magnifyingglass@4x.png" className="invert-50 flex" width="17px" style={{marginRight: "-10px"}} alt="Search"/>
                             <Input
                                 className="w-full py-2 text-sm outline-none"
                                 placeholder="Search by name or email"
@@ -214,6 +215,7 @@ export const SidebarNavigationSectionDividers = () => {
                                     onClick={() => handleStartChat(u.username)}
                                 >
                                     {u.username}
+                                    {u.email}
                                 </button>
                             ))}
                         </div>

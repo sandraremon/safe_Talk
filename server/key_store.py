@@ -2,7 +2,6 @@ from sqlalchemy import and_, or_
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 import os
-from datetime import datetime
 from crypto.encryption import encrypt, decrypt
 from crypto.key_exchange import load_private_key, deserialize_public_key, ecdh
 from crypto.key_derivation import derive
@@ -71,10 +70,13 @@ async def search_users(
     db: Session = Depends(get_db),
     current_user: str = Depends(verify_token)
 ):
-    users = db.query(User).filter(
-        User.username.ilike(f"%{user}%"),
-        User.username != current_user   # exclude me
-    ).limit(10).all()
+    current_user = db.query(User).filter(User.username == current_user).first()
+
+    users = db.query(User).filter(User.username.ilike(f"%{user}%"),
+        User.username != current_user.username,
+    ).union(db.query(User).filter(User.email.ilike(f"%{user}%"), User.email != current_user.email)).all()
+
+
     return [{"username": u.username} for u in users]
 
 @router.get("/messages/{username}")
@@ -164,4 +166,4 @@ async def send_message(
     db.commit()
 
     return {"message": "Message sent successfully"}
-
+
