@@ -2,6 +2,8 @@ import React, {useState} from "react";
 import {Alert, CloseButton, Spinner, Tabs} from "@heroui/react";
 import {User} from "~/Model/User";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 export default function Login() {
 
     const [username, setUsername] = useState("");
@@ -22,9 +24,9 @@ export default function Login() {
 
         try {
 
-            console.log("1");
+            console.log("API URL:", API_URL);
 
-            const response = await fetch("http://localhost:8000/auth/login", {
+            const response = await fetch(`${API_URL}/auth/login`, {
                 method: "POST",
                 body: formData,
             });
@@ -66,7 +68,7 @@ export default function Login() {
 
             try {
 
-            const response = await fetch("http://localhost:8000/auth/register", {
+            const response = await fetch(`${API_URL}/auth/register`, {
                 method: "POST",
                 headers: {
                     "content-type": "application/json"

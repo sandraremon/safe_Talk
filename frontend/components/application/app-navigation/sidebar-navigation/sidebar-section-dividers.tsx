@@ -4,6 +4,8 @@ import {type ChatPreview} from "~/Model/ChatPreview";
 import {useEffect, useState, useRef} from "react";
 import {User} from "~/Model/User";
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 export const SidebarNavigationSectionDividers = () => {
 
     // ── Fix #4: store the WebSocket in a ref so handleSend always sees the live socket ──
@@ -39,7 +41,7 @@ export const SidebarNavigationSectionDividers = () => {
         const token = localStorage.getItem("token");
 
         const fetchChats = async () => {
-            const response = await fetch("http://localhost:8000/key/conversations", {
+            const response = await fetch(`${API_URL}/key/conversations`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -53,7 +55,7 @@ export const SidebarNavigationSectionDividers = () => {
         fetchChats().catch(console.error);
 
         const fetchUserDetails = async () => {
-            const response = await fetch("http://localhost:8000/key/mydetails", {
+            const response = await fetch(`${API_URL}/key/mydetails`, {
                 method: "GET",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -72,7 +74,7 @@ export const SidebarNavigationSectionDividers = () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const socket = new WebSocket(`ws://localhost:8000/ws?token=${token}&client=web`);
+        const socket = new WebSocket(`${API_URL.replace('http', 'ws')}/ws?token=${token}&client=web`);
 
         socket.onopen = () => console.log("Connected to SafeTalk WebSocket");
 
@@ -115,7 +117,7 @@ export const SidebarNavigationSectionDividers = () => {
         setMessages([]);
 
         const token = localStorage.getItem("token");
-        fetch(`http://localhost:8000/key/messages/${activeChat.username}`, {
+        fetch(`${API_URL}/key/messages/${activeChat.username}`, {
             headers: { Authorization: `Bearer ${token}` },
         })
             .then(r => r.json())
@@ -139,7 +141,7 @@ export const SidebarNavigationSectionDividers = () => {
         }
         const delayDebounceFn = setTimeout(() => {
             const token = localStorage.getItem("token");
-            fetch(`http://localhost:8000/key/users/search?user=${encodeURIComponent(searchQuery)}`, {
+            fetch(`${API_URL}/key/users/search?user=${encodeURIComponent(searchQuery)}`, {
                 headers: { Authorization: `Bearer ${token}` }
             })
                 .then(r => r.json())
