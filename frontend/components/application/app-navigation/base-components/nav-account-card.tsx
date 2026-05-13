@@ -115,8 +115,16 @@ export const NavAccountCard = ({user}: {user: User}) => {
                 </div>
             </div>
             <div>
-                <Button variant="danger-soft" className="rounded-4xl" isIconOnly>
-                    <img src="/images/assets/door.left.hand.open@4x.png" alt="Logout" className="w-3.5" />
+                <Button
+                    variant="danger-soft"
+                    className="rounded-4xl"
+                    isIconOnly
+                    onPress={() => {
+                        localStorage.clear(); // This deletes the token
+                        window.location.href = "/login"; // This sends them to the login screen
+                    }}
+                >
+                    <img src="/images/assets/door.left.hand.open@4x.png" alt="Logout" className="w-3.5"/>
                 </Button>
             </div>
         </div>
