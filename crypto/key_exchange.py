@@ -14,7 +14,8 @@ def save_private_key(private_key, path="private_key.pem"):
     Path(path).write_bytes(pem)
 
 def load_private_key(path="private_key.pem"):
-    private_key = load_pem_private_key(Path(path).read_bytes(), password=None)
+    raw_bytes = Path(path).read_bytes()
+    private_key = X25519PrivateKey.from_private_bytes(raw_bytes)
     return private_key, private_key.public_key()
 
 def serialize_public_key(public_key) -> str:

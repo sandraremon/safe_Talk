@@ -105,7 +105,7 @@ class Session:
 
 
     async def connect(self) -> None:
-        uri = f"{self.ws_url}/ws?token={self.token}"
+        uri = f"{self.ws_url}/ws?token={self.token}&client=cli"
         self._ws = await websockets.connect(uri)
 
     async def disconnect(self) -> None:

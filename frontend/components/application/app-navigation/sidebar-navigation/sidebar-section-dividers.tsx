@@ -4,16 +4,6 @@ import {type ChatPreview} from "~/Model/ChatPreview";
 import {useEffect, useState, useRef} from "react";
 import {User} from "~/Model/User";
 
-const decodeHex = (hex: string) => {
-    if (!hex) return "";
-    try {
-        const bytes = new Uint8Array(hex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-        return new TextDecoder().decode(bytes);
-    } catch {
-        return hex; // Fallback if not valid hex
-    }
-};
-
 export const SidebarNavigationSectionDividers = () => {
 
     // ── Fix #4: store the WebSocket in a ref so handleSend always sees the live socket ──
@@ -82,12 +72,11 @@ export const SidebarNavigationSectionDividers = () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
-        const socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+        const socket = new WebSocket(`ws://localhost:8000/ws?token=${token}&client=web`);
 
         socket.onopen = () => console.log("Connected to SafeTalk WebSocket");
 
-        // ── Fix #3: read `payload.ciphertext` — that is what the server actually sends ──
-        socket.onmessage = (event) => {
+        socket.onmessage = async (event) => {
             const payload = JSON.parse(event.data);
 
             if (payload.type === "new_chat") {
@@ -101,7 +90,7 @@ export const SidebarNavigationSectionDividers = () => {
 
             if (payload.type === "message") {
                 if (activeChatRef.current?.username === payload.from) {
-                    setMessages(prev => [...prev, { text: decodeHex(payload.ciphertext), fromMe: false }]);
+                    setMessages(prev => [...prev, { text: payload.plaintext, fromMe: false }]);
                 }
             }
         };
@@ -130,11 +119,11 @@ export const SidebarNavigationSectionDividers = () => {
             headers: { Authorization: `Bearer ${token}` },
         })
             .then(r => r.json())
-            .then((history: { from: string; ciphertext: string; timestamp: string }[]) => {
+            .then((history: { from: string; plaintext: string; timestamp: string }[]) => {
                 const myUsername = userDetails?.username ?? "";
                 setMessages(
                     history.map(m => ({
-                        text: decodeHex(m.ciphertext),
+                        text: m.plaintext,
                         fromMe: m.from === myUsername,
                     }))
                 );
@@ -176,7 +165,7 @@ export const SidebarNavigationSectionDividers = () => {
     };
 
     // ── Fix #2 + #5: send to the correct recipient using the correct field names ──
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!message.trim()) return;
 
         // Fix #5: guard if no conversation is selected yet
@@ -185,13 +174,8 @@ export const SidebarNavigationSectionDividers = () => {
             return;
         }
 
-        // Encode the plaintext as a hex string (backend stores bytes via fromhex)
-        const encoded = Array.from(new TextEncoder().encode(message))
-            .map(b => b.toString(16).padStart(2, "0"))
-            .join("");
-
-        // Fix #2: correct field name is `to` (string username), not `toUser` (numeric id)
-        sockRef.current?.send(JSON.stringify({ to: activeChat.username, ciphertext: encoded }));
+        // Send plaintext; the server will handle encryption.
+        sockRef.current?.send(JSON.stringify({ to: activeChat.username, plaintext: message }));
 
         setMessages(prev => [...prev, { text: message, fromMe: true }]);
         setMessage("");

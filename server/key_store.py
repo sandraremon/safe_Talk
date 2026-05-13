@@ -3,7 +3,10 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 import os
 from datetime import datetime
-from crypto.encryption import encrypt
+from crypto.encryption import encrypt, decrypt
+from crypto.key_exchange import load_private_key, deserialize_public_key, ecdh
+from crypto.key_derivation import derive
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from models.db import Message, User, engine
 from server.auth import get_db, verify_token
 
@@ -78,7 +81,8 @@ async def search_users(
 async def get_messages(
     username: str,
     db: Session = Depends(get_db),
-    current_user: str = Depends(verify_token)
+    current_user: str = Depends(verify_token),
+    client: str = "web"
 ):
     me = db.query(User).filter(User.username == current_user).first()
     them = db.query(User).filter(User.username == username).first()
@@ -95,15 +99,44 @@ async def get_messages(
 
     # Fix #7: build a {id -> username} map so frontend gets a string, not an integer
     name_map = {me.id: me.username, them.id: them.username}
+    
+    results = []
+    aes_key = None
+    
+    if client == "web":
+        try:
+            my_priv, my_pub = load_private_key(f"{current_user}_private_key.pem")
+            their_pub = deserialize_public_key(them.public_key)
+            shared_secret = ecdh(my_priv, their_pub)
+            my_pub_raw = my_pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
+            their_pub_raw = their_pub.public_bytes(Encoding.Raw, PublicFormat.Raw)
+            aes_key = derive(shared_secret, my_pub_raw, their_pub_raw)
+        except Exception as e:
+            print(f"Failed to derive key for history: {e}")
 
-    return [
-        {
-            "from": name_map.get(msg.sender_id, str(msg.sender_id)),
-            "ciphertext": msg.ciphertext.hex(),
-            "timestamp": msg.timestamp.isoformat()
-        }
-        for msg in messages
-    ]
+    for msg in messages:
+        sender_name = name_map.get(msg.sender_id, str(msg.sender_id))
+        
+        if client == "web":
+            plaintext = "[Decryption Failed]"
+            if aes_key:
+                try:
+                    plaintext = decrypt(aes_key, msg.ciphertext).decode('utf-8')
+                except Exception:
+                    pass
+            results.append({
+                "from": sender_name,
+                "plaintext": plaintext,
+                "timestamp": msg.timestamp.isoformat()
+            })
+        else:
+            results.append({
+                "from": sender_name,
+                "ciphertext": msg.ciphertext.hex(),
+                "timestamp": msg.timestamp.isoformat()
+            })
+
+    return results
 
 @router.post("/sendMessage")
 async def send_message(
