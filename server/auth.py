@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pydantic import BaseModel
+import bcrypt
 #from passlib.hash import argon2
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.functions import current_user
@@ -19,8 +20,6 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY environment variable is not set. Please check your .env file.")
-
-pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # No prefix here — main.py adds /auth when including the router
 router = APIRouter(tags=["Authentication"])
@@ -97,7 +96,7 @@ async def register(
     new_user = User(
         username=user.username,
         email=user.email,
-        password_hash=pwd_context.hash(user.password),
+        password_hash=bcrypt.hashpw(user.password.encode("utf-8"), bcrypt.gensalt()),
         public_key=public_hex
     )
     save_private_key(private_key, path=f"{user.username}_private_key.pem")
@@ -115,7 +114,7 @@ async def login(
 ):
 
     user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not pwd_context.verify(form_data.password, user.password_hash):
+    if not user or not bcrypt.checkpw(form_data.password.encode(), user.password_hash.encode()):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password")
 
     token = create_access_token(data={"sub": user.username})

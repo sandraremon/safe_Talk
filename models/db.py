@@ -53,10 +53,6 @@ class Message(Base):
     )
 
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=True
-)
-
+engine = create_engine(DATABASE_URL, echo=True)
 
 Base.metadata.create_all(engine)
