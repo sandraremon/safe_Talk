@@ -3,6 +3,7 @@ import {NavList} from "../base-components/nav-list";
 import {type ChatPreview} from "~/Model/ChatPreview";
 import {useEffect, useState, useRef} from "react";
 import {User} from "~/Model/User";
+import {Description, FieldError, Fieldset, Input, Label, TextField} from "@heroui/react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -191,24 +192,36 @@ export const SidebarNavigationSectionDividers = () => {
             >
                 {/* ── Search Bar UI ── */}
                 <div className="px-4 pb-2 relative z-20">
-                    <input
-                        type="text"
-                        placeholder="Search users..."
-                        className="w-full bg-black/20 text-white rounded-xl px-4 py-2 text-sm outline-none placeholder-white/40"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                    <Fieldset className="flex bg-white pr-3.5 pl-3.5 rounded-4xl flex-col gap-2 w-full" style={{maxWidth: "300px"}}>
+                        <TextField className="flex flex-row items-center gap-2 w-full">
+                            <img src="/images/assets/magnifyingglass@4x.png" className="invert-50" width="20px" alt="Search"/>
+                            <Input
+                                className="w-full py-2 text-sm outline-none"
+                                placeholder="Search by name or email"
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                value={searchQuery}
+                            />
+                        </TextField>
+                    </Fieldset>
+
                     {searchResults.length > 0 && (
-                        <div className="absolute top-full left-4 right-4 mt-1 bg-gray-800 rounded-xl overflow-hidden max-h-40 overflow-y-auto shadow-lg border border-white/10">
+                        <div className="absolute top-full left-4 right-4 mt-1 bg-white rounded-3xl overflow-hidden max-h-40 overflow-y-auto shadow-modern-mockup-outer-lg border border-white/20">
+                            <h1 className="px-4 py-2 text-muted text-xs font-semibold ">Search Results</h1>
                             {searchResults.map(u => (
                                 <button
                                     key={u.username}
-                                    className="w-full text-left px-4 py-2 text-sm text-white hover:bg-white/10 transition-colors"
+                                    className="w-full text-left px-6 py-2 text-sm hover:bg-white/10 transition-colors"
                                     onClick={() => handleStartChat(u.username)}
                                 >
                                     {u.username}
                                 </button>
                             ))}
+                        </div>
+                    )}
+
+                    {searchResults.length === 0 && searchQuery.trim() && (
+                        <div className="absolute top-full left-4 right-4 mt-1 bg-white rounded-2xl shadow-modern-mockup-outer-lg overflow-hidden max-h-40 overflow-y-auto border border-white/20">
+                            <p className="px-4 py-2 text-muted text-sm font-semibold ">No users found</p>
                         </div>
                     )}
                 </div>
@@ -298,8 +311,7 @@ export const SidebarNavigationSectionDividers = () => {
                     <button
                         onClick={handleSend}
                         className="rounded-full bg-purple-500 flex items-center justify-center hover:bg-white/90 transition-colors"
-                        style={{height: "50px", width: "50px", padding: "12px", background: "var(--primary-color)"}}
-                    >
+                        style={{height: "50px", width: "50px", padding: "12px", background: "var(--primary-color)"}} disabled={!message.trim()}>
                         <img src="/images/assets/arrow.up.right@4x.png" width="20px" alt="Send"/>
                     </button>
                 </div>
@@ -308,15 +320,7 @@ export const SidebarNavigationSectionDividers = () => {
         </div>
     </div>
 ) : (
-    <div
-        style={{
-           
-           marginLeft: MAIN_SIDEBAR_WIDTH, // only offset for sidebar
-        height: "100vh",
-        width: "calc(100vw - 292px)", // full remaining width
-        }}
-        className="flex items-center justify-center text-black/40"
-    >
+    <div style={{marginLeft: MAIN_SIDEBAR_WIDTH, height: "100vh",width: "calc(100vw - 292px)"}} className="flex items-center text-xl justify-center font-bold text-black/40">
         Select a chat to start messaging
     </div>
 )}

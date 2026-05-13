@@ -162,8 +162,9 @@ input[type=password], input[type=email], input[type=text], input[type=file], inp
     border: none;
     border-radius: 45px;
     box-sizing: border-box;
+    box-shadow: none;
 
-    background-color: var(--page-background);
+    background: var(--page-background);
 
     color: var(--text-primary);
 
