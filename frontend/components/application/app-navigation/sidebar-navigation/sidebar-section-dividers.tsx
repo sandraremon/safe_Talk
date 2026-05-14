@@ -188,8 +188,8 @@ export const SidebarNavigationSectionDividers = () => {
     const sidebar = (
         <div className="flex h-full p-3">
             <aside
-                style={{"--width": `${MAIN_SIDEBAR_WIDTH}px`} as React.CSSProperties}
-                className="h-full flex w-full max-w-full flex-col self-center justify-center overflow-auto border-secondary bg-secondary pt-4 shadow-xs md:border-r lg:w-(--width) rounded-3xl lg:border lg:pt-5"
+                style={{"--width": `${MAIN_SIDEBAR_WIDTH}px`, background: "var(--form-background-color)"} as React.CSSProperties}
+                className="h-full flex w-full max-w-full flex-col self-center justify-center overflow-auto border-secondary pt-4 shadow-xs md:border-r lg:w-(--width) rounded-3xl lg:border lg:pt-5"
             >
                 {/* ── Search Bar UI ── */}
                 <div className="px-4 pb-2 relative z-20">
@@ -204,6 +204,7 @@ export const SidebarNavigationSectionDividers = () => {
                             />
                         </TextField>
                     </Fieldset>
+                    <br/>
 
                     {searchResults.length > 0 && (
                         <div className="absolute top-full left-4 right-4 mt-1 bg-white rounded-3xl overflow-hidden max-h-40 overflow-y-auto shadow-modern-mockup-outer-lg border border-white/20">
@@ -264,11 +265,11 @@ export const SidebarNavigationSectionDividers = () => {
         <div className="flex h-full w-full flex-col overflow-hidden rounded-3xl">
 
             {/* Chat header */}
-            <div className="px-6 py-4 border-b border-white/20 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-sm font-bold">
+            <div className="px-4 border-b border-white/20 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{background: "var(--primary-color)"}}>
                     {activeChat.username[0].toUpperCase()}
                 </div>
-                <span className="text-white font-semibold">{activeChat.username}</span>
+                <span className=" font-semibold">{activeChat.username[0].toLocaleUpperCase() + activeChat.username.slice(1, activeChat.username.length)}</span>
             </div>
 
             {/* Messages */}
@@ -286,9 +287,11 @@ export const SidebarNavigationSectionDividers = () => {
                         <div
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm mt-2 mb-2 ${
                                 msg.fromMe
-                                    ? "bg-white text-black rounded-br-sm"
-                                    : "bg-white/20 text-black rounded-bl-sm"
+                                    ? " text-white rounded-br-xl rounded-tl-4xl rounded-bl-4xl rounded-tr-4xl"
+                                    : "bg-white border-2 shadow-md text-black rounded-bl-xl rounded-br-4xl rounded-tl-4xl rounded-tr-4xl"
                             }`}
+
+                            style={{background: msg.fromMe ? "var(--primary-color)" : ""}}
                         >
                             {msg.text}
                         </div>
