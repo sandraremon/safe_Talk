@@ -3,6 +3,7 @@ sandra_private_key.pem
 mina_private_key.pem
 ziad_private_key.pem
 .env
+sandra2_private_key.pem
 crypto/__pycache__/
 models/__pycache__/
 client/__pycache__/
